@@ -1,0 +1,675 @@
+---
+title: "TFM"
+output:
+  pdf_document: 
+    fig_caption: yes
+    keep_tex: yes
+  html_document:
+    df_print: paged
+---
+ https://afit-r.github.io/sentiment_analysis
+```{r setup, include=FALSE}
+#required libraries
+
+#rendering doc
+require(knitr)
+require(markdown)
+library(tinytex)
+
+#data importing
+library(jsonlite) 
+library(readr) 
+#data manipulation
+library(dplyr) 
+library(stringr)
+library(lubridate)
+library(stringr)
+library(reshape)
+library(reshape2)
+library(magrittr)
+
+#data visualization
+library(ggplot2)
+library(ggthemes)
+library(scales)
+library(rworldmap)
+library(gpclib)
+library(rgeos)
+library(maptools)
+library(knitr)
+library(rgdal)
+library(ca)
+#web scrapping
+library(rvest)
+#text mining
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+
+
+#predicting
+library(naivebayes)
+library(e1071)
+library(caret)
+
+#correspondence analysis
+library("FactoMineR")
+library("factoextra")
+library("gplots")
+
+#text mining
+library(tidytext)
+
+options(scipen = 999)
+
+```
+In order to import the data, the best solution I found was to download the metadata from the website and then import it as csv.
+I'll generate the .RData objects in case you want to upload them that way.
+I also upload two different files:
+- One from wikipedia to group countries,
+- Another that has the coordinates of the borders of the countries to do the world plot
+
+```{r importing,echo=TRUE, warning=FALSE}
+# setwd("~/Desktop/kiva_ds_json")
+# load("Auxiliary_files.Rdata")
+
+lenders<-read_csv("lenders.csv",col_names=FALSE)
+colnames(lenders)<-c("id","name","image_id","city","state","country_code","member_since","personal_url","occupation","loan_because","other_info","loan_count","invited_by","invited_count")
+loans<-read_csv("loans.csv") #was not able to read the JSON
+loans$funded<-loans$funded_amount==loans$loan_amount
+loans_lenders<-read_csv("loans_lenders.csv")
+
+#This metadata from the countries is just to group the country into regions or continents level.
+# countries_metadata<-read.csv("countries_metadata.csv",sep=";")
+# countries_metadata$Country<-as.character(countries_metadata$Country)
+
+
+##needed later aswell
+# world.map <- readOGR(dsn="data", layer="TM_WORLD_BORDERS_SIMPL-0.3")
+# world.ggmap <- fortify(world.map, region = "NAME")
+#save(countries_metadata,world.ggmap,partners_aux,file="Auxiliary_files.Rdata")
+load("Auxiliary_files.Rdata")
+```
+
+Basic desciptive stats.
+```{r basic_descriptive=FALSE,echo=TRUE, warning=FALSE}
+#here a dummy vble is created, being true if the loan was funded and false if it didn't reach the required amount
+
+
+kable(table(loans$funded)/nrow(loans),digits=3) #only a 4.6% of the loans don't manage to reach funding
+
+
+#get the number of loans per country
+dt_country_level<-loans %>%
+  group_by(country_name) %>%
+  summarise(funding_rate=sum(funded)/n(),
+            loans=n()/1000) 
+
+#required to do the world map
+world_countries<-unique(world.ggmap$id)
+world_countries_not_in<-world_countries[!world_countries%in%dt_country_level$country_name] %>%
+  as.data.frame() %>% 
+  cbind(rep(NA,length(world_countries[!world_countries%in%dt_country_level$country_name])),rep(NA,length(world_countries[!world_countries%in%dt_country_level$country_name]))) %>%
+  set_colnames(c("country_name","funding_rate","loans"))
+
+dt_country_level<-rbind(dt_country_level,world_countries_not_in)
+
+
+plot_funding_rate_country<-ggplot(dt_country_level ,aes(map_id=country_name,fill=(funding_rate))) +
+  labs(title='Kiva Funding Rate per Country') + 
+  geom_map(map =world.ggmap) +
+  expand_limits(x = world.ggmap$long, y = world.ggmap$lat) +
+  theme_economist() + 
+  scale_fill_gradient(low = "red", high = "green",limits=c(0,1), labels = percent, name='Funding Rate') + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y= element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position="bottom",
+        legend.key.width = unit(3,'line'))
+
+plot_funding_rate_country
+
+plot_loans_country<-ggplot(dt_country_level ,aes(map_id=country_name,fill=(loans))) +
+  labs(title='Loans received by Country') + 
+  geom_map(map =world.ggmap) +
+  expand_limits(x = world.ggmap$long, y = world.ggmap$lat) +
+  theme_economist() + 
+  scale_fill_gradient(low = "lightblue", high = "darkblue",name='Loans (thousands)') + 
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y= element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        #plot.background = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position="bottom",
+        legend.key.width = unit(3,'line'))
+
+plot_loans_country
+
+ggsave("Figures/plot_loans_country.png",plot_loans_country)
+
+
+
+
+
+```
+
+
+I considered interesting; when focusing on studying the partners performance, to have an idea of what is the current kind of market.
+Used in competition analysis, the Herfindahl Index uses the market share of all the players in a market to finally come up with a index that measures the concentration of the market. Herfindahl index ranges from 0 to 1, being 1 a monopoly (market with 1 player having 100% of the market share) and 0 a perfect competitive market, having all the firms the same market share, close to 0. 
+More: https://en.wikipedia.org/wiki/Herfindahl_index
+```{r herf_creation,echo=TRUE, warning=FALSE,fig.align="center"}
+herfindahl_index<-loans %>%
+  mutate(year=year(loans$posted_time)) %>% #think it is easier to work with years
+  select(country_name,partner_id,year) %>%
+  group_by(country_name,partner_id,year) %>%
+  mutate(n_partner=n()) %>% #n_partner is the number of loans from a partner in a given country in a given year
+  group_by(country_name,year) %>%
+  mutate(n_year=n()) %>% #n_year is the number of loans in a given country in a given year
+  unique() %>%
+  ungroup() %>%
+  mutate(n_partner_relative_2=(n_partner/n_year)^2) %>% #n_partner_relative_2 is the "market share" of every partner of every year in a given country to the power of 2
+  group_by(country_name,year,n_year) %>%
+  mutate(h_index=sum(n_partner_relative_2)) %>% #applying formula
+  select(year,country_name,h_index,n_year) %>%
+  unique() %>%
+  left_join(countries_metadata, by=c("country_name"="Country")) %>% #joining into an auxiliary table so that I get the regions
+  group_by(country_name) %>%
+  mutate(sum_whole_time=sum(n_year), #sum of loans overall the whole period
+         year_adoption=min(year)) #year of entry in Kiva
+  
+#for every country and year, contains the number of loans
+loans_country<-loans %>%
+  mutate(year=as.integer(year(loans$posted_time))) %>%
+  group_by(country_name,year) %>%
+  summarise(n_country=n()) 
+
+#for every region (higher level than country) and year, contains the number of loans
+loans_region<-loans_country %>%
+  left_join(countries_metadata, by=c("country_name"="Country")) %>%
+  group_by(Region,year) %>%
+  summarise(n_region=sum(n_country)) %>%
+  filter(!is.na(Region))
+
+plot_requested_loans_region<-ggplot(loans_region,aes(x=(year),y=n_region,col=Region)) + 
+  geom_line() +
+  scale_x_continuous(breaks = min(loans_region$year):max(loans_region$year)) + 
+  labs(title='Requested Loans per Region',
+       x='Year',
+       y='')  + 
+  theme_economist_white() 
+
+```
+
+
+In the plot below, I study the evolution of the Herfindahl Index with the 10 countries that received more loans.
+```{r top10_herf,echo=TRUE, warning=FALSE}
+top_10_herfindahl<-herfindahl_index[herfindahl_index$sum_whole_time>31000,]
+
+plot_herfindahl <- ggplot(top_10_herfindahl) +
+  geom_line(aes(x=year,y=h_index,col=country_name)) + 
+  #facet_wrap(~Region) + 
+  labs(title='Evolution of the Herfindahl Index ',
+       subtitle='Showing the 10 Countries that received more loans',
+       x='Year',
+       y='Herfindahl Index') + 
+   scale_color_discrete(name="") +  
+  theme_economist_white() + 
+  scale_x_continuous(breaks = seq(from=min(herfindahl_index$year),
+                                  to=max(herfindahl_index$year),
+                                  by=3))
+
+```
+
+
+Below, I compare the evolution of the Herfindahl Index controlling for the maturity of every country. Over time, it has an upwards trend; meaning that over time, the model is been switched to a one domined by partners; and this number of partners may also be reduced over time.
+```{r evolution_herfindahl,echo=TRUE, warning=FALSE}
+ggplot(herfindahl_index[herfindahl_index$n_year>100,],
+       aes(x=year,
+           y=h_index,
+           group=year)) +
+  geom_boxplot() + 
+  facet_wrap(~year_adoption) + 
+  scale_x_continuous(breaks = seq(from=min(herfindahl_index$year),
+                                  to=max(herfindahl_index$year),
+                                  by=5)) + 
+  labs(title='Evolution of the Herfindahl Index',
+       subtitle='Controlling for maturity of every Country',
+       x='Year',
+       y='Herfindahl Index')  + 
+  theme_economist_white()
+
+```
+
+
+Focusing on one country and one of the mentioned topics: Text mining
+For quantity of loans and presence of partners I decided Philippines; although only one parameter has to be changed to run the whole analysis (effort is minimum)
+```{r descriptive_partners, echo=TRUE, warning=FALSE}
+
+
+dt_philippines<-loans %>%
+  mutate(year=as.integer(year(loans$posted_time))) %>%
+  filter(country_name=='Philippines') 
+
+#obtain and plot the number of loans for partner by year
+dt_philippines_partners<- dt_philippines %>%
+  group_by(partner_id,year) %>%
+  summarise(n_partner=n()) 
+
+#required to obtain the names
+# partners_aux<-aggregate(n_partner~partner_id,dt_philippines_partners,FUN=sum) %>%
+#   top_n(10,n_partner) %>%
+#   mutate(name=NA)
+# 
+# description<-list()
+
+#does an API request; requiring thus internet access
+#alternatively, one can load the "Names_partners.Rda" object
+# obtain_description<-function(x){
+#   url<-paste0("https://api.kivaws.org/v1/partners/",partners_aux$partner_id[i],".json")
+#   url %>% 
+#   readLines() %>%
+#   fromJSON() %>%
+#   return()
+# }
+# 
+# for (i in 1:10){
+#   description[i]<-obtain_description(i)
+#   partners_aux$name[i]<-description[i][[1]]$name
+# }
+
+#save(partners_aux,file="Names_partners.Rda")
+
+
+
+dt_philippines_partners<-dt_philippines_partners %>%
+  left_join(partners_aux[,c(1,3)],by="partner_id")
+
+ggplot(dt_philippines_partners[!is.na(dt_philippines_partners$name),],aes(x=year,y=n_partner,fill=as.factor(name))) + 
+  geom_bar(position='dodge',stat='identity') + 
+  theme_economist_white() + 
+  scale_color_discrete(name="Partner ID") +  
+  scale_x_continuous(breaks = min(herfindahl_index$year):max(herfindahl_index$year)) + 
+  labs(title='Philipinnes: Number of Loans per Partner per Year',
+       x='Year',
+       y='') + 
+  theme(legend.text=element_text(size=8),
+        legend.position="right",
+        legend.direction="vertical",
+        axis.text.x = element_text(size=8)) + 
+  guides(fill=guide_legend("Partner Name"))
+
+```
+
+
+Idea to investigate: at what moment do partners start entering into a Country? Do they copy the existing pattern?
+
+Very good guide for Text Mining: https://eight2late.wordpress.com/2015/05/27/a-gentle-introduction-to-text-mining-using-r/
+
+For text mining:
+- Frequency of words
+- Sentiment analysis (somehow, quality of words)
+- Sentence structure (sentences length, distribution of paragraphs, description length....)
+
+I do an example of focusing on the sentence structure. In this case, I only extract the number of paragraphs, but it should be done for many different features that can be generated from a text: (sentences length, distribution of paragraphs, description length, frequency of commas,upper characters...)
+
+```{r structure,echo=TRUE, warning=FALSE}
+
+# Here there is a function to obtain the number of paragraphs of a given description
+obtain_n_paragraphs<-function(x){
+  description<-x
+  #it splits the original array into different ones based on "\n", which means \n = LF (Line Feed) // Used as a new line character in Unix/Mac OS X
+  splitted<-str_split(description,"\n")[[1]]
+  #from there, it selects this new sentences that have more than 40 characters.
+  n_paragraphs<-splitted[lapply(splitted,nchar)>40]
+  #it returns the number of paragraphs
+  return(length(n_paragraphs))
+}
+
+#a auxiliary function to clear a bit the description
+clean_description<-function(x){
+  description<-x
+  clean<-str_replace_all(description,'\n','') %>%
+    str_replace_all('\r','') %>%
+    str_replace_all('\t','') 
+  #it returns the clean description
+  return(clean)
+}
+
+#obtain different characteristics
+dt_philippines$n_paragraphs<-lapply(dt_philippines$original_description, obtain_n_paragraphs)
+dt_philippines$clean_description<-lapply(dt_philippines$original_description, clean_description)
+
+text_attributes<-dt_philippines %>%
+  select(clean_description,partner_id) %>%
+  mutate(length_description=nchar(clean_description),
+         n_dots=str_count(clean_description, pattern="\\."),
+         n_comma=str_count(clean_description, pattern="\\,"),
+         n_digits=str_count(clean_description, pattern="[0-9]"),
+         upper=str_count(clean_description, pattern="[A-Z]"),
+         lower=str_count(clean_description, pattern="[a-z]")) %>%
+  select(-clean_description)
+         
+cor(text_attributes,use="complete.obs") %>%
+  melt() %>%
+  filter(X1!='partner_id',X2!='partner_id') %>%
+  ggplot() + 
+  geom_tile(aes(x=X1,y=X2,fill=value)) + 
+  geom_text(aes(x=X1,y=X2, label = round(value,2)), color = "black", size = 4) 
+
+text_melted<-as.data.frame(text_attributes) %>%
+  melt(id.var="partner_id") %>%
+  filter(!partner_id%in%c(351,389,409,508)) %>%
+  left_join(partners_aux[,c(1,3)],by="partner_id")
+
+
+ggplot(text_melted,
+       aes(value,
+           colour=as.factor(name))) +
+  geom_density(alpha = 1) + 
+  facet_wrap(~variable,scales="free") + 
+  theme_economist() + 
+  labs(title='Differences in marginal distributions by partner id')
+
+  
+```
+
+```{r}
+model<-naiveBayes(as.factor(partner_id)~.,data=text_attributes)
+
+preds<-predict(model,newdata=text_attributes)
+
+
+cm<-table(preds,text_attributes$partner_id)
+
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+ 
+accuracy = sum(diag) / n
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall) 
+
+```
+
+
+```{r dtmr_creation,echo=TRUE, warning=FALSE}
+
+table(dt_philippines$funded)/nrow(dt_philippines) #un 98.8% aconsegueixen els diners; un model de prediccio ser?? m??s complicat pero ens podem focalitzar en les variables que augmenten les probabilitats de rebre financiaci?? (pero ja hi havia molta investigacio darrere; dones; dones somrient a la foto...)
+
+sample_size<-100000 #works with 100k
+idx_sample<-sample(nrow(dt_philippines),sample_size)
+
+docs<-Corpus(VectorSource(dt_philippines$original_description))
+
+# Convert the text to lower case
+docs <- tm_map(docs, content_transformer(tolower))
+# Remove numbers
+docs <- tm_map(docs, removeNumbers)
+# Remove english common stopwords
+docs <- tm_map(docs, removeWords, stopwords("english"))
+# Remove punctuations
+docs <- tm_map(docs, removePunctuation)
+# Eliminate extra white spaces
+docs <- tm_map(docs, stripWhitespace)
+# Text stemming
+#docs <- tm_map(docs, stemDocument)
+#remove the words that are about the name of the partners
+docs <- tm_map(docs, removeWords, c('hspfi','pmpc','gdmpc'))
+dtmr <-DocumentTermMatrix(docs, 
+                          control=list(wordLengths=c(4, 20),
+                                       bounds = list(global = c(nrow(dt_philippines)*0.05,nrow(dt_philippines)*0.8))))
+
+kable(as.matrix(dtmr[1:5,1:5]))
+#this table shows, for every description, the times of every word appearing
+#the dimension is 259776 x 203, being every row every description and every column the count of every word
+dim(dtmr)
+
+save(dtmr,dt_philippines,file = "data_needed.RData")
+load("data_needed.RData")
+cor(as.vector(dtmr[1:2,]),as.vector(dtmr[30:31,]))
+
+dtmr_small <-DocumentTermMatrix(docs, 
+                          control=list(wordLengths=c(4, 20),
+                                       bounds = list(global = c(nrow(dt_philippines)*0.20,nrow(dt_philippines)*0.5))))
+
+
+dtmr_small$dimnames
+
+```
+
+
+descriptive wordcloud
+```{r descriptive_wordcloud,echo=TRUE, warning=FALSE}
+
+freqr <- apply(dtmr,2,sum)
+# 
+# findFreqTerms(dtmr,lowfreq=80)
+# 
+# findAssocs(dtmr,"business",0.6)
+
+wf=data.frame(term=colnames(dtmr),occurrences=freqr)
+wf$term<-as.character(wf$term)
+
+ggplot(subset(wf, freqr>mean(freqr)), aes(term, occurrences)) + 
+  geom_bar(stat='identity') + 
+  coord_flip() +
+  theme_economist() + 
+  labs(title='Frequency of words',
+       ylab="")
+
+wordcloud(names(freqr),freqr, min.freq=0)
+
+#https://www.tidytextmining.com/tfidf.html
+dtmr_partner_id<-as.data.frame(cbind((dt_philippines$partner_id),as.matrix(dtmr)))
+partner_id_sum<-aggregate(.~ V1, data = dtmr_partner_id, sum)
+partner_id_sum_long<-melt(partner_id_sum,id="V1")
+colnames(partner_id_sum_long)<-c("partner_id","word","n")
+
+partner_id_sum_long<-partner_id_sum_long %>%
+  group_by(partner_id) %>%
+  mutate(total=sum(n)) %>%
+  filter(!partner_id%in%c(351,389,409,508)) %>%
+  left_join(partners_aux[,c(1,3)],by="partner_id")
+
+ggplot(partner_id_sum_long, aes(n/total, fill = word)) +
+  geom_histogram(show.legend = FALSE) +
+  #xlim(NA, 0.0009) +
+  facet_wrap(~name, scales = "free_y") + 
+  #theme(strip.text = element_text(size=5)) + 
+  labs(title="Frequency of frequencies for every partner",
+       xlab="Frequency",
+       ylab="Count") + 
+  theme_economist()
+
+```
+
+```{r echo=TRUE,warning=FALSE,fig.height=10,fig.width=16}
+# 
+# freq_by_rank <- partner_id_sum_long %>% 
+#   group_by(partner_id) %>% 
+#   mutate(rank = row_number(), 
+#          `term frequency` = n/total)
+# 
+# 
+# ggplot(freq_by_rank,aes(rank, `term frequency`, color = as.factor(partner_id))) + 
+#   geom_line(size = 1.1, alpha = 0.8, show.legend = FALSE) + 
+#   scale_x_log10() +
+#   scale_y_log10()
+# 
+# 
+# rank_subset <- freq_by_rank %>% 
+#   filter(rank < 500,
+#          rank > 10,
+#          log10(`term frequency`)>-5)
+# 
+# 
+# 
+# lm(log10(`term frequency`) ~ log10(rank), data = rank_subset)
+
+
+partner_id_tf_idf <- partner_id_sum_long %>%
+  left_join(wf,by=c('word'='term')) %>%
+  mutate( tf=n/total,
+          idf=log(dim(dtmr)[1]/occurrences),
+          tf_idf=tf*idf) %>%
+  arrange(-tf_idf)
+
+
+partner_id_tf_idf %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>% 
+  group_by(partner_id) %>% 
+  top_n(10,tf_idf) %>% 
+  ungroup %>%
+  arrange(tf_idf) %>%   
+  left_join(partners_aux[,c(1,3)],by="partner_id") %>% 
+  ggplot(aes(word, tf_idf, fill = name.x)) +
+  labs(title='Words of Every Partner by IDF',
+       y='Term Frequency - Inverse Document Frequency') + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~name.x, ncol = 2, scales = "free") +
+  coord_flip() +
+  theme_economist_white()
+
+sentiment<-partner_id_sum_long %>%
+  inner_join(get_sentiments("bing"),by="word")
+
+sentiment %>%
+  filter(n >= 200) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  coord_flip() + 
+  theme_economist_white() + 
+  labs(title='Contribution of the individual words to the sentiment library',
+       ylab='Contribution to sentiment')
+
+
+sentiment_nrc<-partner_id_sum_long %>%
+  inner_join(get_sentiments("nrc"),by="word") %>%
+  group_by(partner_id,sentiment) %>%
+  summarise(value=sum(n))
+
+sentiment_individual_nrc<-(as.matrix(dtmr)) %>%
+  melt(id.var=c("Docs","partner_id")) %>%
+  inner_join(get_sentiments("nrc"),by=c("Terms"="word")) %>%
+  group_by(Docs,sentiment) %>%
+  summarise(value=sum(value)) %>%
+  dcast(Docs~sentiment) %>%
+  cbind(dt_philippines$partner_id) %>%
+  set_colnames(c("partner_id","variable","value")) %>%
+  filter(variable!='Docs',
+         !dt_philippines$partner_id%in%c(351,389,409,508)) 
+
+
+
+
+sentiment_individual_nrc<-(as.matrix(dtmr)) %>%
+  melt(id.var=c("Docs","partner_id")) %>%
+  inner_join(get_sentiments("nrc"),by=c("Terms"="word")) %>%
+  group_by(Docs,sentiment) %>%
+  summarise(value=sum(value)) %>%
+  dcast(Docs~sentiment) %>%
+  cbind(dt_philippines$partner_id) %>%
+  melt(id.var="dt_philippines$partner_id") %>%
+  set_colnames(c("partner_id","variable","value")) %>%
+  filter(variable!='Docs',
+         !dt_philippines$partner_id%in%c(351,389,409,508))
+
+
+
+ggplot(sentiment_individual_nrc,
+       aes(value,colour=as.factor(partner_id))) +
+  geom_density(alpha = 0.1) + 
+  facet_wrap(~variable,scales="free") + 
+  theme_economist() + 
+  labs(title='Differences in marginal distributions by partner id')
+
+
+
+
+
+```
+
+```{r PCA}
+#to which partner do they belong
+dt_philippines_idx<-dt_philippines %>%
+  mutate(idx=rownames(dt_philippines)) %>%
+  select(partner_id,idx,funded_time) %>%
+  filter(!partner_id%in%c(351,389,409,508)) %>%
+  group_by(partner_id) %>%
+  arrange(partner_id,desc(funded_time)) %>%
+  top_n(n=200,
+        wt=desc(funded_time)) %>%
+  select(-funded_time)
+
+balanced_train<-cbind(dt_philippines_idx$partner_id,
+      as.matrix(dtmr[dt_philippines_idx$idx,])) %>%
+  as.data.frame()
+
+idx_train<-sample(nrow(balanced_train),
+                  nrow(balanced_train)*0.8)
+
+ctrl <- trainControl(method = "repeatedcv",
+                     number = 10,
+                     repeats = 5)
+
+set.seed(400)
+ctrl <- trainControl(method="repeatedcv",repeats = 3) #,classProbs=TRUE,summaryFunction = twoClassSummary)
+knnFit <- train(as.factor(V1) ~ .,
+                data = balanced_train[idx_train,], 
+                method = "knn",
+                trControl = ctrl, 
+                tuneLength = 20)
+plot(knnFit)
+knnPredict <- predict(knnFit,newdata = balanced_train[-idx_train,] )
+
+x<-table(knnPredict,balanced_train[-idx_train,1])
+
+
+
+#structure in time?
+dt_philippines_idx<-dt_philippines %>%
+  mutate(idx=rownames(dt_philippines)) %>%
+  select(partner_id,idx,year) %>%
+  filter(partner_id==145) %>%
+  arrange(desc(year)) 
+
+
+balanced_train<-cbind(dt_philippines_idx$partner_id,
+      as.matrix(dtmr[dt_philippines_idx$idx,])) %>%
+  as.data.frame()
+
+idx_train<-sample(nrow(balanced_train),
+                  nrow(balanced_train)*0.8)
+```
+
+
+
+
+```{r}
+lenders$member_since<-as.Date(as.POSIXct(lenders$member_since,origin='1970-01-01'))
+loans_lenders_v2<-loans_lenders[1:100,] %>%
+  left_join(loans[,c('id','posted_time')],by=c("loan_id"="id")) %>%
+  arrange(posted_time)
+
+str_split(loans_lenders_v2[1,'lender_ids'],',')
+
+```
