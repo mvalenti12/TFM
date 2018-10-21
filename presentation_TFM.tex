@@ -20,14 +20,13 @@
   Department of Statistics and Operations Research\\
   Universitat Politcnica de Catalunya}
 
-\date{22nd of October of 2018}
 
 \begin{frame}
 \titlepage
 \end{frame}
 
 \section{Findings} 
-\begin{frame}\frametitle{SPOILER: Findings}
+\begin{frame}\frametitle{Findings}
 In Kiva, an online lending platform:
 \begin{itemize}
 \item Lending preferences (gender, country and sector) differ on lender characteristics (gender, country and profession).
@@ -118,7 +117,7 @@ The following hypothesis are to be validated:}
 \subsection{Literature Review}
 \begin{frame}\frametitle{Litearture Review}
 \begin{itemize}
-\item \textcite{Galak2010} using Kiva: lenders prefer to give to those who are more like themselves (\textbf{(gender, occupation, and first name initial)}).
+\item \textcite{Galak2010} using Kiva: lenders prefer to give to those who are more like themselves (\textbf{gender, occupation, and first name initial}).
 \item \textcite{Lin2013}, using Prosper: transactions are more likely to occur between parties in the same geographical area
 \item \textcite{Greenberg2015}, using Kickstarter: projects founded by female founders are tended to be backed by more females (than projects not founded by females).
 \end{itemize}
@@ -194,7 +193,7 @@ bun t married lives kampong cham province six children husband moved work  phnom
 \end{frame}
 
 \begin{frame}\frametitle{Dimensionality Reduction}
-Three different approaches are considered:
+Three different approaches are considered:\footnote{See Figure 4.1.}
 \begin{itemize}
 \item Multidimensional Scaling using the Jaccard similarity
 \item Multidimensional Scaling using the Cosine similarity
@@ -203,26 +202,52 @@ Analysis)
 \end{itemize}
 \end{frame}
 
-\begin{frame}\frametitle{Dimensionality Reduction}
-\begin{figure}
-\includegraphics[width=0.8\textwidth]{Figures/plot_distances_descriptions.png}
-\end{figure}
-\end{frame}
+% \begin{frame}\frametitle{Dimensionality Reduction}
+% \begin{figure}
+% \includegraphics[width=0.8\textwidth]{Figures/plot_distances_descriptions.png}
+% \end{figure}
+% \end{frame}
 
 \subsection{Dynamic Visualization}
 \begin{frame}\frametitle{Evolution of Descriptions Over Time}
 \begin{itemize}
-\item \href{file:///Users/marcvalenti/TFM/img_gif/kenya/animation.gif}{Evolution of Kenya Descriptions}
-\item \href{file:///Users/marcvalenti/TFM/img_gif/peru/animation.gif}{Evolution of Perú Descriptions}
-\item \href{file:///Users/marcvalenti/TFM/img_gif/Philippines/animation_philippines.gif}{Evolution of Philippines Descriptions}
+\item \href{https://github.com/mvalenti12/TFM/blob/master/gifs/gif_kenya.gif}{Evolution of Kenya Descriptions}
+\item \href{https://github.com/mvalenti12/TFM/blob/master/gifs/gif_peru.gif}{Evolution of Perú Descriptions}
+\item \href{https://github.com/mvalenti12/TFM/blob/master/gifs/gif_philippines.gif}{Evolution of Philippines Descriptions}
 \end{itemize}
 \end{frame}
 
 \subsection{Authorship Attribution}
 \begin{frame}\frametitle{Authorship Attribution}
-\includegraphics[width=0.8\textwidth]{Figures/plot_acc_time_svm_descriptions.png}
+\begin{center}
+\includegraphics[width=0.7\textwidth]{Figures/plot_acc_time_svm_descriptions.png}
 % \caption{Evaluation of Number of features, transformations and Algorithms to classify Partners' Descriptions}
+\end{center}
 \end{frame}
+
+\subsection{Authorship Attribution}
+\begin{frame}\frametitle{Authorship Attribution}
+
+\begin{tabular}{cl}  
+         \begin{tabular}{c}
+           \includegraphics[height=5cm, width=4cm]{Figures/plot_acc_time_svm_descriptions.png}
+           \end{tabular}
+           & \begin{tabular}{l}
+             \parbox{0.5\linewidth}{%  change the parbox width as appropiate
+             \footnotesize{
+             \textbf{Goal:} For 2011Q1 in Philippines, attribute correctly the partner. \footnote{Should be replicated for a later month.} 
+             \begin{itemize}
+             \item Implemented a Support Vector Machine classifier. 
+             \item 10-Fold Cross-Validation. 
+             \item 70\% Train - 30\% Test Split.
+             \item Metrics: Accuracy on Test Set and Training Time on Training Set.
+             \end{itemize}
+             \textbf{Outcome}: $>99$\% Accuracy achieved with 50 Dimensions from PCA and a Linear Kernel.}
+    }
+         \end{tabular}  \\
+\end{tabular}
+\end{frame}
+
 % 
 % \begin{frame}{Evolution of Descriptions by Partner: Peru}
 % \animategraphics[loop,controls,width=\linewidth]{20}{img_gif/peru/plot_}{01}{10}
@@ -390,7 +415,7 @@ Model (5 Log-Linear Model and \texttt{Factor\_Scores}) supports strongly with th
 \end{frame}
 
 \section{Findings} 
-\begin{frame}\frametitle{Further Work}
+\begin{frame}\frametitle{Findings}
 In Kiva, an online lending platform:
 \begin{itemize}
 \item Lending preferences (gender, country and sector) differ on lender characteristics (gender, country and profession).
