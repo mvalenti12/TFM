@@ -1,5 +1,6 @@
 source("scripts/libraries_functions.R")
 ### azure
+### the key is not valid anymore. 
 end.point <- "westeurope.api.cognitive.microsoft.com"
 key1 <- "e4c029dc2b344e3ab86ad9c79b2b054c"
 
