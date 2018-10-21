@@ -1,0 +1,293 @@
+\chapter{Loans Descriptions} %Main chapter title
+
+\label{Chapter4} %Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+% 
+% \subsection{Areas of partner focus}
+% 
+% - Are descriptions different and can they be matched to a given partner?
+% - If they are different, have partners copied one another?
+% - Explain why a partner that has the best success rate might not be the best one.
+% - Explain biases that appear
+% - Explain how to solve the problem. How, including other variables and regressing it so that the partner effect can be properly estimated.
+
+%-----------------------------------
+%	SUBSECTION 2
+%-----------------------------------
+% 
+% \subsection{On partners descriptions}
+% As shown in \ref{loans_description}, each loan consists of among others, a description. We initially limit the descriptions to the ones for the country of \textit{Philippines}. 
+% This descriptions consist of 
+% %----------------------------------------------------------------------------------------
+% %	SECTION 2
+% %----------------------------------------------------------------------------------------
+% 
+% \section{Attribution of a description to a partner}
+% 
+% \begin{itemize}
+% \item 
+% \textbf{loans\$description\[loans\$loan_id==120122\]} 
+% Displays the original Description 
+% \blockquote{
+% Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% \item 
+% \textbf{docs <- Corpus(VectorSource(loans$description[loans$loan_id==120122]))}
+% Assigns a new object named "docs" of "SingleCorpus" or "Corpus" class as.
+% \blockquote{
+% <<SimpleCorpus>>
+% Metadata:  corpus specific: 1, document level (indexed): 0
+% Content:  documents: 1}
+% 
+% \item 
+% \textbf{inspect(docs)} 
+% Displays detailed information on a corpus
+% \blockquote{
+% Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% \item 
+% %\textbf{docs <- tm_map(docs, removeWords, c('n','br','t','r'))} 
+% remove n newline, r carriage return, t tab character and br line break
+% \blockquote{
+% Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% \item 
+% %\textbf{docs <- tm_map(docs, removeWords, c('n','br','t','r'))} 
+% remove n newline, r carriage return, t tab character and br line break
+% \blockquote{
+% Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, content_transformer(tolower))}
+% Convert the text to lower case
+% \blockquote{
+% bun t., 42, is married and lives in kampong cham province with her six children. her husband moved to work in phnom penh city as a construction worker with an income of us\$8 per day. she has made up her mind that she wants to take a loan of us\$700 to create a business of selling groceries at her house with the assistance of her children. if she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, stripWhitespace)}
+% Eliminate extra white spaces
+% \blockquote{
+% bun t., 42, is married and lives in kampong cham province with her six children. her husband moved to work in phnom penh city as a construction worker with an income of us\$8 per day. she has made up her mind that she wants to take a loan of us\$700 to create a business of selling groceries at her house with the assistance of her children. if she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, removeNumbers)}
+% Remove numbers
+% \blockquote{
+% bun t., , is married and lives in kampong cham province with her six children. her husband moved to work in phnom penh city as a construction worker with an income of us\$ per day. she has made up her mind that she wants to take a loan of us\$ to create a business of selling groceries at her house with the assistance of her children. if she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}
+% 
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, removePunctuation)}
+% Remove numbers
+% \blockquote{
+% bun t  is married and lives in kampong cham province with her six children her husband moved to work in phnom penh city as a construction worker with an income of us per day she has made up her mind that she wants to take a loan of us to create a business of selling groceries at her house with the assistance of her children if she succeeds in her business plan she will find a job suitable for her husband to work back in his hometown}
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, removeWords, c('hspfi','pmpc','gdmpc','nwtf'))}
+% Remove english common stopwords
+% \blockquote{
+% bun t   married  lives  kampong cham province   six children  husband moved  work  phnom penh city   construction worker   income  us per day   made   mind   wants  take  loan  us  create  business  selling groceries   house   assistance   children   succeeds   business plan  will find  job suitable   husband  work back   hometown}
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, removeWords, c('hspfi','pmpc','gdmpc','nwtf'))}
+% remove the name of the partners
+% \blockquote{
+% bun t   married  lives  kampong cham province   six children  husband moved  work  phnom penh city   construction worker   income  us per day   made   mind   wants  take  loan  us  create  business  selling groceries   house   assistance   children   succeeds   business plan  will find  job suitable   husband  work back   hometown}
+% 
+% \item
+% %\textbf{docs <- tm_map(docs, removeWords, c('hspfi','pmpc','gdmpc','nwtf'))}
+% remove the name of the partners
+% \blockquote{
+% bun t   married  lives  kampong cham province   six children  husband moved  work  phnom penh city   construction worker   income  us per day   made   mind   wants  take  loan  us  create  business  selling groceries   house   assistance   children   succeeds   business plan  will find  job suitable   husband  work back   hometown}
+% end{itemize}
+% 
+
+\section{Introduction}
+Being the Descriptions of the Loans written by the \textbf{partners}, this chapter is focused on working on our description hypothesis:
+\begin{tcolorbox}
+\textbf{H1:} Every partner has a template for their descriptions; being descriptions distinguishable across partners.
+\end{tcolorbox}
+\begin{tcolorbox}
+\textbf{H2:} Partners may change their description template over time and copy other partners.
+\end{tcolorbox}
+
+Even though it may sound intuitive that description has great importance on a loan, research around it has been quite scarce. Only \parencite{Pope2011} focus on descriptions; in this case from Prosper.com. \par
+They have two different approaches: For the short description (one line), they employ two independent Research Assistants per description, they are willing to encode the purpose of a loan. For the longer description, they use a simple text-analysis program, finding correlations between the description (average word-length and average sentence-length, and the percent of words that are misspelled) and picture characteristics. What they end up extracting from the descriptions is then, the log number of total characters, a readability index (which uses word and sentence length), and the percent of words which are misspelled. \par
+Our approach will be completely different. We will be focusing on word frequency; willing to provide a framework to describe the evolution of descriptions over time.\par
+
+
+\section{Text-Processing}
+As shown in \ref{loans_description}, each loan consists of among others, a description. This descriptions is mostly 2 or 3 paragraphs, introducing the borrower and describing the goal of the loan.
+For the following sections, a subset of data from the country Philippines will be presented. Philippines was chosen since it is the country that has received more loans. However, the methodologies are reproduced for Perú and Kenya two (the second and third countries regarding loan destination).
+An example of a description could be the one from the loan 120122.
+\begin{tcolorbox}
+Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.
+\end{tcolorbox}
+
+Our goal is now to convert this long string into numerical data. Once we have gone through the \textbf{Data Acquisition} process, the next step is \textbf{Text pre-processing}. In \textbf{Text pre-processing}, we are willing to convert our raw descriptions into a matrix. \par
+There are several libraries in R that provide great support in doing this step. This Thesis has used \texttt{tm}, but in the meantime \texttt{tidytext} was released and \texttt{caret} started supporting this format. \par
+In this step, we are willing to remove all the non trivial words and characters of the strings. By applying the \textbf{Text pre-processing}, the previous description would result as:
+
+\begin{tcolorbox}
+bun t married lives kampong cham province six children husband moved work  phnom penh city   construction worker income  us per day made  mind wants take loan  us  create  business selling groceries house assistance children succeeds business plan  will find  job suitable husband  work back hometown
+\end{tcolorbox}
+
+The next step is the creation of an object of class \texttt{Term-Document Matrix} or \texttt{Corpus}. A Term-Document Matrix will have nxp dimensions, being $n$ the number of descriptions and $p$ the number of words we decide to retrieve. $X_{nxp}$ will contain the appearances of word $p$ in the description $n$. Table~\ref{Tab:DT_matrix} is an example of a \texttt{Term-Document Matrix}, including the previous description.
+
+
+\begin{table}[H]
+\begin{tabular}{ccccccccccccccccccccc}
+\hline
+       & \rot{business} & \rot{children} & \rot{city} & \rot{groceries} & \rot{house} & \rot{husband} & \rot{income} & \rot{lives} & \rot{loan} & \rot{made} & \rot{married} & \rot{province} & \rot{selling} & \rot{wants} & \rot{will} & \rot{work} & \rot{able} & \rot{ahead} & \rot{continues} & \rot{grateful} \\ \hline
+120122 & 2        & 2        & 1    & 1         & 1     & 2       & 1      & 1     & 1    & 1    & 1       & 1        & 1       & 1     & 1    & 2    & 0    & 0     & 0         & 0        \\
+661165 & 2        & 0        & 1    & 0         & 0     & 0       & 1      & 1     & 0    & 0    & 0       & 0        & 0       & 0     & 1    & 0    & 1    & 1     & 1         & 1        \\
+251336 & 1        & 0        & 0    & 0         & 2     & 0       & 0      & 0     & 2    & 1    & 1       & 0        & 0       & 0     & 1    & 0    & 0    & 0     & 0         & 0        \\
+423290 & 0        & 0        & 0    & 0         & 0     & 0       & 0      & 0     & 0    & 0    & 0       & 0        & 0       & 0     & 0    & 0    & 0    & 0     & 0         & 0        \\
+421136 & 1        & 1        & 0    & 0         & 1     & 0       & 0      & 0     & 1    & 0    & 1       & 0        & 0       & 0     & 1    & 0    & 1    & 1     & 0         & 0        \\ \hline
+\end{tabular}
+\caption{A Document-Term Matrix containing Loan 120122} 
+\label{Tab:DT_matrix}
+\end{table}
+
+\section{Visualizing Descriptions}
+Dealing with high dimensional spaces, we are willing to reduce the dimensionality so that we can gather insights by visualizing a fewer number of dimensions. \par
+After that, a methodology will be shown to describe the evaluation of descriptions over time.
+
+\subsection{Dimensionality Reduction}
+Three different approaches will be presented in the following items:
+\begin{itemize}
+\item \textbf{Multidimensional Scaling using the Jaccard similarity}: When the decision is to use the Jaccard similarity and to project it to a low-dimensional space by using Metric or Non-Metric Multidimensional Scaling. In this thesis, the \texttt{vegan::vegdist} function is used in continuous data to obtain the Jaccard dissimilarity matrix. After that, both Metric Multidimensional Scaling (by using \texttt{MASS::cmdscale}) and Non-Metric Multidimensional Scaling (by using \texttt{MASS::isoMDS} are applied. Multi Dimensional Scaling aims to visualize the similarities of a Dissimilarity Matrix, being a form of non-linear dimensionality reduction. Very used in the field of Natural Language Processing.
+\item \textbf{Multidimensional Scaling using the Cosine similarity}: When the decision is to use the Cosine similarity and to project it to a low-dimensional space by using Metric or Non-Metric Multidimensional Scaling. The \texttt{lsa::cosine} function is used; using the same procedure to do perform the Multidimensional Scaling. Computing the Jaccard similarity is less computational costly than the Cosine similarity. Very used in the field of Natural Language Processing.
+\item \textbf{Multidimensional Scaling using Euclidean distance (Principal Component Analysis)}: When willing to work with the Euclidean Distance. Two procedures would get the same results: Performing Principal Component Analysis and performing Metric Multidimensional Scaling with the Euclidean Distance. However, Principal Component Analysis uses an orthogonal transformation of the different variables to output principal components, a set of values of linearly uncorrelated variables. The Principal Components are sorted in decreasing variance, while being constrained to be orthogonal to the preceding components. It is less computationally costly than the previous methods. Not much used in the field of Natural Language Processing due to a usual better performance and willingness to work with Jaccard or Cosine similarities.
+\end{itemize}
+
+After doing all the listed procedures, we were aiming to visualize the first two dimensions of a subset of descriptions posted during the month of June of 2016 belonging to Philippines. This is provided in Figure~\ref{Fig:distances_plot}. In it, the descriptions are plot in a two dimensional space using the techniques previously described. The Non-Metric Dimensional Scaling using the Jaccard dissimilarity and the reduction using Principal Component Analysis show the best aggrupations of clusters.
+
+\begin{figure}[H]
+\includegraphics[width=\columnwidth]{Figures/plot_distances_descriptions.png}
+\caption{Descriptions in Philippines, June of 2016. First 2 Dimensions using different distances and methods}
+\label{Fig:distances_plot}
+\end{figure}
+
+Due to the fact that the methodology using Non-Metric Multidimensional Scaling is more computational costly (and not able to do it in the local machine that was used to do this Thesis) and the results are very similar with the methodology with Principal Component Analysis (which has very good scalability), from now on the procedures will be hold with Principal Component Analysis. The \texttt{Term-Document Matrix} of Philippines contains more than 285000 documents, being scalability a important topic. Computing a Matrix Distance would require computing more than $4*10^9$ pairs of individual distances.
+
+\subsection{Evaluation of Descriptions Over Time}
+Having concluded that from this point on due to computationally efficiency, the individual scores from Principal Component Analysis will be used, in this subsection the approach is discussed.
+
+As already mentioned, the Principal Components are sorted in decreasing variance. In Figure ~\ref{fig:eig_pca}, the percentage of variances explained by each principal component is shown. When choosing the number of dimentions to retain, the point at which the proportion of variance explained by each subsequent principal component drops off must be chosen. In this case, several options would be possible. Only using the first two principal components would be reasonable, but still has the caveat of only retaining 4.5\% of the variance explained. Retaining the first 4 Principal Components is the chosen alternative, since after them the variance drops off. At this point, the explained variance is 7.1\%. The last valid alternativewould be retaining the first 6 Principal Components, as the explained variance reaches a plateau after that. It is important to remember that we are using 547 variables in the Principal Component Analysis (all of them scaled and standardized to unit variance), thus the low explained variability.
+
+\begin{figure}[H]
+\includegraphics[width=\columnwidth]{Figures/pca_dtmr_eig.png}
+\caption{Scree plot of the eigenvalues}
+\label{fig:eig_pca}
+\end{figure}
+
+
+By using the individual scores resulting from the Principal Component Analysis and the month the loan was posted, we provide an evolution over time (in this case, a month is a unit of time) for the descriptions.
+The individual scores of the descriptions are plotted in the first four dimensional spaces that for Philippines, accounting for 7.1\% of the variance.
+On the other hand, at every point the average distance (both between and within clusters) is provided for every pair of \texttt{partner\_ids}. This is summarized in the top-right table of Figure~\ref{Fig:phili_pca_example}. On the other hand, the average distance (between and within clusters) is provided for the whole monthly subset, seeing the evolution over time. This is shown on the bottom-right plot of Figure~\ref{Fig:phili_pca_example} \par
+
+\begin{figure}[h] 
+    \centering
+    \includegraphics[width=\columnwidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_92.png} 
+  \caption{Descriptions in Philippines, June of 2016. Example Frame}
+  \label{Fig:phili_pca_example}
+\end{figure}
+
+
+We then provide an animation by using all the different months to see the evolution over time. In Figure~\ref{fig:pca_evol} different frames are shown for the month of July of the years in the period 2012-2017.
+This subsection is replicated for the three countries that receive more loans: Philippines, Kenya and Perú.\footnote{Watching the GIFs available at \url{https://github.com/mvalenti12/TFM/gifs} is reccommended}.
+
+
+\begin{figure}[h!] 
+  \label{ fig7} 
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_18.png} 
+    %\caption{Initial } 
+    \vspace{2ex}
+  \end{minipage}%%
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_30.png} 
+    %\caption{Rupture} 
+    \vspace{2ex}
+  \end{minipage} 
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_42.png} 
+    %\caption{DFT, Initial } 
+    \vspace{2ex}
+  \end{minipage}%
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_54.png} 
+    %\caption{DFT, rupture} 
+    \vspace{2ex}
+  \end{minipage} 
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_66.png} 
+    %\caption{DFT, Initial} 
+    \vspace{2ex}
+  \end{minipage}%
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=.8\linewidth]{/Users/marcvalenti/TFM_data/img_gif/Philippines/plot_78.png} 
+    %\caption{DFT, rupture} 
+    \vspace{2ex}
+  \end{minipage}%
+  \caption{Evolution of Philippines Descriptions (2012 - 2017)}
+  \label{fig:pca_evol}
+\end{figure}
+
+
+\section{Authorship Attribution}
+In the previous section, we have seen how descriptions characteristics seem to be influenced by partner. In this section, we are willing to see how how good they can be distinguished. \par
+To do so, a Machine Learning algorithm will be used. Support Vector Machines tend to perform good in this kind of problems; therefore we are going to use two different methods: a linear Kernel and a radial one. \par
+We have used a small portion of our dataset to perform this experiment. In this case, the subset of descriptions correspond to all those loans uploaded during the first quarter of 2011 (\printdate{2011-01-01} - \printdate{2011-03-31}), for Philipinnes, corresponding to 19505 observations. \par
+We also want to know how (1) feeding the algorithm with more variables and (2) realizing dimensionality reduction alters the performance and the training time. To do so, we reduce the dimensionality by applying Principal Component Analysis and using the scores of the Principal Components instead of the Document-Term Matrix. In both cases, we'll be training the algorithm with different subsets of variables, always starting for the most informative ones and increasingly including the others. The sorting on the Document-Term Matrix is based on the total count of the variables: the variables with higher counts are considered those that contain more information. \par
+We then report the Accuracy on the Test Set for every method. The original dataset is splitted on 70\%Train and 30\%Test. When Training, we implement 10-Fold Cross Validation.
+%
+\subsection{Evaluation of Number of features and transformations to do: Results}
+The results are summarized on Test Data; in Figure~\ref{Fig:Acc_svm} and Table~\ref{Tab:conf_matrix}.
+The outcome is clear: when using a Support Vector Machine, reducing the data shows a great improvement if a lower number of dimensions is used to feed the algorithm. Using the scores also reduces computational time.
+On the other hand, a linear kernel shows better accuracy then using the scores from PCA, whereas for the raw Term-Document Matrix, the radial kernel performs better. Regarding their computational time, a radial kernel is always more costly. All this is shown in Figure~\ref{Fig:Acc_svm}.
+Another obvious and interesting outcome is the clear ability to distinguish and attribute ownership of every text. The confusion Matrix is presented in Table~\ref{Tab:conf_matrix}.
+
+
+\begin{figure}[t!]
+   \centering
+   \includegraphics[width=\textwidth]{Figures/plot_acc_time_svm_descriptions.png}
+   \caption{Evaluation of Number of features, transformations and Algorithms to classify Partners' Descriptions}
+\label{fig:Acc_svm}
+\end{figure}
+
+\begin{table}[h!]
+  \centering
+  \caption{Confusion Matrix of the Test Data} 
+  \label{Tab:conf_matrix} 
+\begin{tabular}{@{\extracolsep{5pt}} ccccccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & 123 & 124 & 125 & 126 & 128 & 136 & 144 & 145 \\ 
+\hline \\[-1.8ex] 
+123 & $180$ & $0$ & $0$ & $5$ & $0$ & $0$ & $0$ & $0$ \\ 
+124 & $0$ & $6$ & $1$ & $0$ & $0$ & $0$ & $0$ & $0$ \\ 
+125 & $0$ & $0$ & $195$ & $3$ & $0$ & $0$ & $0$ & $0$ \\ 
+126 & $0$ & $0$ & $1$ & $175$ & $0$ & $0$ & $0$ & $0$ \\ 
+128 & $0$ & $0$ & $0$ & $0$ & $289$ & $0$ & $0$ & $0$ \\ 
+136 & $0$ & $0$ & $0$ & $0$ & $0$ & $135$ & $0$ & $0$ \\ 
+144 & $0$ & $0$ & $0$ & $0$ & $0$ & $0$ & $48$ & $0$ \\ 
+145 & $0$ & $0$ & $1$ & $3$ & $0$ & $0$ & $0$ & $278$ \\ 
+\hline \\[-1.8ex] 
+\end{tabular} 
+\end{table} 
+
+
+
+
+%

@@ -1,0 +1,203 @@
+% Chapter 1
+% \DTLloaddb[noheader, keys={thekey,thevalue}]{mydata}{auxiliary_values.txt}
+\chapter{The lender-borrower relationship; who lends to whom?} % Main chapter title
+
+\label{Chapter3} % For referencing the chapter elsewhere, use \ref{Chapter1} 
+
+%----------------------------------------------------------------------------------------
+%----------------------------------------------------------------------------------------
+\section{Introduction}
+This chapter is focused on the first hypothesis:
+\begin{tcolorbox}
+\textbf{H1:} There are other factors than the ones mentioned in previous research that contribute in the lender decision process.
+\end{tcolorbox}
+
+Inside this hypothesis, several sub-hypothesis were established:
+\begin{itemize}
+\item \textbf{H1.1}: Gender: Is there any relationship between the gender of the borrowers and the gender of the lenders? How strong is it?
+\item \textbf{H1.2}: Geographical area: Is there any relationship between the nationalities of the borrowers and the nationalities of the lenders? Is is stronger for any case?
+\item \textbf{H1.3}: Occupations: Is there any relationship between the sector of the borrowers and the occupations of the lenders? Is is stronger for any case?
+\end{itemize}
+
+
+The current research on the \textbf{lender-borrower relationship} can be summarized in the following bullets:
+\begin{itemize}
+\item Using data from Kiva, three dimensions of social distance \textbf{(gender, occupation, and first name initial)} are analyzed to conclude that lenders prefer to give to those who are more like themselves \textcite{Galak2010}.
+\item Using data from Prosper.com, the importance of geographical area is studied (with the \textbf{"home bias" topic}), to conclude that transactions are more likely to occur between parties in the same geographical area, rather than outside \textcite{Lin2013}. 
+\item Using data from Kickstarter, they realize that projects founded by female founders are tended to be backed by more females than projects not founded by females \textcite{Greenberg2015}.
+\end{itemize}
+It will contain mostly exploratory analysis, as the conclusions we would get would not be more different to \textcite{Galak2010}. 
+
+\section{Data Collection}
+The procedure for extracting data turned out to be computationally costly and not easily scalable. In order to obtain, for a given loan, information about its lenders, the function, named \texttt{obtain\_lenders\_data} was created, working as follows:
+\begin{itemize}
+\item The variables of interest from the lenders are transformed to \textbf{one-hot encoding}   by using the library \texttt{caret}. They are saved as a \texttt{data.table} object called \textit{aux\_lenders}; assigning \texttt{lender\_id} as \texttt{key}.
+\item We obtained in the dataframe with source \file{loans\_lenders.csv} a string of comma separated values with the unique identifiers of lenders. By using the function \texttt{stringr::str\_split}, we could separate the lenders. For eficiency reasons, we saved all the lenders in a \texttt{data.table} object named \textit{lenders\_info\_expanded\_hot}; assigning \texttt{lender\_id} as \texttt{key}.
+
+\item Getting rid of the efficiency of \texttt{data.table} objects, \textit{lenders\_info\_expanded\_hot} is left-joined to \textit{aux\_lenders}. By adding all the colums (that are \textbf{one-hot encoded}), each column sum then obtains the number of lenders that had that feature.
+\end{itemize}.
+\par
+Now that the function itself was optimized, we seeked for different alternatives to retrieve the information for all the loans. The more efficient was to parallellize it was using the library \texttt{parallell}. The procedure worked as follows (see R code in Listing~\ref{lst:predictgender}):
+\begin{itemize}
+\item The number of CPU cores on the current host is identified by using the \texttt{detectCores} function.
+\item A set of copies of R running in parallel and communicating over sockets are created using the \texttt{makeCluster} function.
+\item All the needed variables are exported in the global environment (aka 'workspace') of each node by using the \texttt{clusterExport} function.
+\item The custom function \texttt{obtain\_lenders\_data} was applied in parallell by making use of the \texttt{parSapply} function.
+\item The workers are shut down by calling \texttt{stopCluster}. It is good practice to do this.
+\end{itemize}
+
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:subsetting_data}, caption={R Code to extract lenders information from a loan}]
+
+obtain_lenders_data<-function(lenders_vector){
+  aux_lenders<-(unlist(str_split(gsub(' ','',lenders_vector),','))) %>%
+    as.data.table() %>%
+    set_colnames(c("id"))
+  aux_lenders[lenders_info_expanded_hot,on="id",nomatch=0] %>%
+    select(-id) %>%
+    colSums(na.rm=TRUE) %>%
+    as.vector() %>%
+    return()
+}
+
+no_cores <- detectCores()
+
+clust <- makeCluster(no_cores) 
+
+clusterExport(clust, "obtain_lenders_data")
+clusterExport(clust, "%>%")
+clusterExport(clust, "str_split")
+clusterExport(clust, "as.data.table")
+clusterExport(clust, "set_colnames")
+clusterExport(clust, "lenders_info_expanded_hot")
+clusterExport(clust, "select")
+
+dt_complete <- t(parSapply(clust,
+  # might be reccommended to use subsets of lenders
+  # in my local machine, this subset of 50k observations would take 8h
+                           loans_lenders$lenders[200001:250001], 
+                           obtain_lenders_data,
+                           USE.NAMES = FALSE))
+
+stopCluster(clust)
+\end{lstlisting}
+
+We end up collecting information for a sample of 250000 loans. Unfortunately, we were willing to collect the most recent ones, but a bug in the code did not sort the results. Due to the collection time (250000 loans were more than 40h in the local machine) we considered replicating the results for a further iteration but not for this Thesis.
+
+\section{Methodology}
+Based on the nature of the data, different approaches will be suggested. \par
+In the case of \textbf{gender}, both variables are continuous with a range [0,1]. They are the result of a ratio of the females over females and males. It could be interpreted as failures and successes, accounting thus for the weights (as the number of attempts differs within individuals). Different \textbf{regressions} are suggested. \par
+Regarding \textbf{occupation} and \textbf{countries}, both categories contain categorical variables. This will involve be working with \textbf{Contingency tables}, exploring two alternatives to their visualization: \textbf{Correspondence Analysis} or \textbf{Mosaic Plots}.
+
+\subsection{Continuous Data with range [0,1]: Gender}
+Since the number of borrowers added complexity to the estimation of this subsection, we only consider the loans with a single borrower. From now on, to refer to gender as a variable we use the proportion of female individuals out of the whole sample. Regarding the data,
+\begin{itemize}
+\item Regarding \textbf{borrowers}, there are way more loans only with female borrowers (\missingcommand{num_borrowers_fem}) than male borrowers (\missingcommand{num_borrowers_male}).
+\item Regarding \textbf{lenders}, the values are more distributed because the denominator is a higher number. The mode is 0.5, being left skewed. When looking at the extremes; that is loans funded fully by males or females, there are way less loans funded only by female lenders (\missingcommand{num_lenders_fem}) rather than loans funded only by male lenders (\missingcommand{num_lenders_male}).
+\end{itemize}
+ 
+Even though different models were specified (mostly trying to reproduce \textcite{Greenberg2015} work explaining how female borrowers were mostly funded by female lenders (and this would differ based on the sector), but none of the models could not be validated. Since results in this area were already shown in the previous paper, we decided to focus on other areas instead. \footnote{The Github repository contains many work done on this area so it can be reused in the future}. 
+
+% In this case, we are willing to explain the response binary variable (from now on, represented as y) \texttt{female\_borrowers\_num}, being 1 if the borrower is a female and 0 if is a male. On the other hand, the explanatory variables will be the proportion of female lenders \texttt{prop\_female\_lenders} (represented as x) and the \texttt{sector\_name} (transformed to dummy variables, being $d_{i,n}$ 1 if the loan $i$ ($i = 1,..,n$) belongs to the category $j$ ($j = 1,..,m$). In order to avoid multicollinearity, not all the sectors are represented. In fact, two of them are eliminated (Entertainment and Wholesale) because of their small sample size.
+% 
+% To do so, we suggest a logistic regression including the interaction effects:
+% \begin{equation}
+% \ln\frac{p(y=1)}{1-(p=1)} = \beta_0 + \beta_1 * x_{i,1} * d_{i,1} + ... + \beta_m * x_{i,m} * d_{i,m}
+% \end{equation}
+% 
+% The results of the logistic regression are summarized in \input{Tables/glm_gender.tex}
+% In the reported Logistic coefficients, the multiplicative change in odds ratio is shown.
+% As a conclusion, for most of the sectors, Women
+
+
+%
+% \begin{figure}
+% \centering
+% \includegraphics[width=\columnwidth]{Figures/Contingency/Gender.png}
+% \caption{Scatter Plot and Histogram for Gender (Lenders) - Gender (Loans)}
+% \label{fig:Gender}
+% \end{figure}
+
+% We will be using \texttt{log(prop\_female\_borrowers)} as the response variable (from now on, Y) and \texttt{(prop\_female\_lenders)} as the explanatory variable (from now on, X). Several options are proposed:
+% WIP!!!!!!
+% \begin{itemize}
+% %https://stats.stackexchange.com/questions/43366/extending-logistic-regression-for-outcomes-in-the-range-between-0-and-1
+% %https://stats.stackexchange.com/questions/26762/how-to-do-logistic-regression-in-r-when-outcome-is-fractional-a-ratio-of-two-co
+% \item Fitting a Linear Model using OLS and transforming \texttt{log(prop\_female\_borrowers)} through the $log(\frac{y}{1-y})$.
+% \item Fitting a Linear Model using OLS and transforming both \texttt{log(prop\_female\_borrowers)} and \texttt{log(prop\_female\_lenders)} through the $log(\frac{y}{1-y})$.
+% \item Using logistic regression.
+% \item Alternatively, you could fit the original variable into a generalized linear model with the logistic transform as your link variable and with a relationship between Y
+% Y
+% 's variance and mean the same as though it were a binomial variable, fitting by iterative reweighted least squares. This is basically the same as "using logistic regression".
+% \item Performing Beta Regression.
+% \end{itemize} 
+
+
+
+
+\subsection{Categorical Data: Countries and Occupations}
+In the following paragraphs, the methodology used in the current and next subsection is introduced. Both \textbf{Correspondence Analysis (CA)} and \textbf{Mosaic Plots} are used in doing exploratory data analysis on occupation and country for the Lender-Borrower Relationship. \par
+Regarding  \textbf{Correspondence Analysis}, its main goal is to display or summarise a set of data in a two-dimensional graphical form. \textcite{Nagpaul1999} provides a very good definition of the method:
+\blockquote{
+\textbf{CA} transforms a data table into two sets of new variables called factor score (obtained as linear combinations of, respectively the rows and columns): One set for the rows and one set for the columns. These factor scores give the best representation of the similarity structure of, respectively, the rows and the columns of the table. In addition, the factors scores can be plotted as maps, that optimally display the information in the original table. In these maps, rows and columns are represented as points whose coordinates are the factor scores and where the dimensions are also called factors, components (by analogy with pca), or simply dimensions. Interestingly, the factor scores of the rows and the columns have the same variance and, therefore, rows and columns can be conveniently represented in one single map.
+In correspondence analysis, the total variance (often called inertia) of the factor
+scores is proportional to the independence chi-square statistic of this table and therefore the factor scores in \textbf{CA} decompose this $\chi^2$ into orthogonal components.}
+\par
+On the other hand, we follow the approach suggested by \textcite{Zeileis2007} to provide a simple but powerful visualization on \textbf{Mosaic Plots}. What is coloured in the plots are the Pearson Residuals.\par
+\blockquote{
+To fix notations, we consider a 2-way contingency table with cell frequencies $[n_{ij}]$ for $i = 1,...,I$ and j = $1,...,J$ and row and column sums $n_{i+}$ =
+$\sum_{i+}{n_{ij}}$ and $n_{+j}$ = $\sum_{+j}{n_{ij}}$ respectively. Given an
+underlying distribution with theoretical cell probabilities $\pi_{ij}$ , the null hypothesis of independence of the two categorical variables can be formulated as
+\begin{equation}
+H_{0}: \pi_{ij} = \pi_{i+}\pi_{+j}.
+\end{equation}
+The estimated expected cell frequencies under $H_{0}$ are $\hat{n}_{ij} = n_{i+}n_{+j}/n_{++}$. As well-established in the stastical literature, a very closely related hypothesis is that of homogeneity which in particular leads to the same expected cell frequencies and is hence not discussed explicitely below. The probably best known and most used measure of discrepancy between observed and expected values are the Pearson residuals:
+\begin{equation}
+r_{ij} = \frac{n_{ij} - \hat{n}_{ij}}{\sqrt{\hat{n}_{ij}}}.
+\end{equation}
+The most convenient way to aggregate the I x J residuals to one test statistic is their sum of squares
+\begin{equation}
+\chi^2 = \sum{r_{ij}^2}
+\end{equation}
+because this is known to have an unconditional limiting $\chi^2$ distribution with (I x 1)(J x 1) degrees of freedom under the null hypothesis.
+}
+
+In the Mosaic Diagram, the Lenders variables are shown on the horizontal axis, whereas the borrowers are shown on the vertical one. All the missing values have been discarded, therefore only the valid fields are displayed. 
+The width of the columns indicate the share the borrower variables represent out of the total. The same happens with the height of the rows: they indicate the share the lender variables represent out of the total. Being the \textbf{Standardized Residuals} already explained, one of the most clear is the pair United States (Lenders) - United States (Borrowers). United States seems to represent ~40\% of the funding of the displayed countries. However, there is a big outlier. United States loans by mostly (more than 50\%) Americans. On the other hand, loans from Rwanda receive very few participation of United States (US) lenders, being compensated by a big residual from Great Britain. \par
+
+In the Correspondence Analysis Biplot, Borrowers are plotted in red, whereas Lenders are plotted in Blue. The proximity of two variables of the same group (either Lenders or Borrowers) indicate similarities in their behaviour. Regarding Lenders (in Blue), closer distance means similar row-profile. Borrowers(in Red) close to each other stands for similar column-profile.
+
+
+% \input{Tables/Contingency_Tables/table_contingency_Occ.tex}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=.8\columnwidth]{Figures/Contingency/Mosaic_Occ.png}
+\caption{MCA - Biplot for Occupation (Lenders) - Sector (Loans)}
+\label{fig:Mosaic_Occ}
+\bigbreak
+\includegraphics[width=.8\columnwidth]{Figures/Contingency/CA_Occ.png}
+\caption{CA - Biplot for Country (Lenders) - Country (Loans)}
+\label{fig:CA_Occ}
+\end{figure}
+
+% \input{Tables/Contingency_Tables/table_contingency_Country_final.tex}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=.8\columnwidth]{Figures/Contingency/Mosaic_Country.png}
+\caption{Mosaic Diagram for Country (Lenders) - Country (Loans)}
+\label{fig:Mosaic_Country}
+\bigbreak
+\includegraphics[width=.8\columnwidth]{Figures/Contingency/CA_Country.png}
+\caption{CA - Biplot for Country (Lenders) - Country (Loans)}
+\label{fig:CA_Country}
+\end{figure}
+
+\newpage
+\section{Conclusions}
+
+This Thesis started with this Chapter, but we later found out that there was very few room for innovation in this field. The \textbf{Lender-Borrower Relationship} has been one of the most explored fields of Academic Research. Therefore, we decided to focus on other areas, the next sections, that are very innovative and the impact would be way higher.
+However, the summary of this Chapter 3 would be: \par
+Regarding Gender, the suggested models provided very low explainability. As found in \textcite{Greenberg2015}, Female borrowers received more attention by female lenders, and this was stronger in certain Sectors. However, as mentioned, we decided to focus our effort in other sections with higher impact. \par
+Regarding Occupation and Country, both $\chi^2$ statistics reject the Null Hypothesis of independence, exhibiting then stronger deviations and therefore associations. This suggests that every Country has lending preferences. Finally, Correspondence Analysis has not been able to show \textit{similar (based on history, region or race for example)} countries with \textit{similar lending} behaviours. \par

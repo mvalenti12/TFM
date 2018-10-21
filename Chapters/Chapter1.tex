@@ -1,0 +1,233 @@
+% Chapter 1
+\DTLloaddb[noheader, keys={thekey,thevalue}]{mydata}{auxiliary_values.txt}
+\chapter{About Kiva and the Dataset} % Main chapter title
+
+
+\label{Chapter1} % For referencing the chapter elsewhere, use \ref{Chapter1} 
+
+%----------------------------------------------------------------------------------------
+
+% Define some commands to keep the formatting separated from the content
+% \newcommand{\keyword}[1]{\textbf{#1}}
+% \newcommand{\tabhead}[1]{\textbf{#1}}
+% \newcommand{\code}[1]{\texttt{#1}}
+% \newcommand{\file}[1]{\texttt{\bfseries#1}}
+% \newcommand{\option}[1]{\texttt{\itshape#1}}
+
+%----------------------------------------------------------------------------------------
+\section{About Kiva}
+%\color{red}{THIS SECTION TO BE EXPANDED}
+Kiva is a 501(c)(3) non-profit organization, founded in 2005 and based in San Francisco, with a mission to connect people through lending to alleviate poverty. \footnote{See \textcite{Kiva}.}
+It is an online platform focused on micro-loans (with a median loan of \missingcommand{median_loan}\$) that aims to connect borrowers and lenders. \par
+Since its origin, almost 1.5M loans have been posted, reaching an impressive funding rate of ~95.5\%. During 2017, ~225000 loans were created, raising a total amount of more than 150M\$. \par
+On the other side, the number of lenders is 2.35M; >180000 of them joining on 2017. \par
+There are four main agents in the platform:
+\begin{itemize}
+\item \textbf{Borrowers}, users that request loans. They can be charged interest rate fees from the \textbf{Partners}.
+\item \textbf{Partners}, mostly a local microfinance institution acting as a bridge between \textbf{Borrowers} and \textbf{Kiva}. Can charge interest rate, being reflected on \textbf{Borrower}'s side.
+\item \textbf{Lenders}, users that have the option of contributing with at least 25\$ to the different available projects. No interest rate is received from the loans.
+\item \textbf{Kiva}, being the platform that connects \textbf{the three previous agents}, agregates and transfers the capital.
+\end{itemize}
+In ~\ref{fig:DiagramJourney}, provided by I. Alegre, a schema of how the platform works is displayed.
+\begin{figure}[H]
+\centering
+\includegraphics{Figures/Kiva_Workflow}
+\caption[Kiva Schema]{Kiva Schema}
+\label{fig:DiagramJourney}
+\end{figure}
+
+\section{Accessibility and Description of the data}
+
+Kiva aims to offer facilities to developers to access the data.
+In the following subsections, we present the two approaches followed to extract and use the data presented in this thesis: a RESTful web-service API and using Data Screenshots.
+
+
+\subsection{RESTful web-service API}
+The RESTful web-service API aims at offering real-time data by doing requests. It becomes a great alternative and prevents the tedious web-scrapping.
+
+The documentation that can be found  here: \url{http://build.kiva.org/docs/conventions/restful}
+
+\blockquote{
+REST means that our API is resource-oriented where the method calls are actually URLs that point to data you fetch or modify. The "ful" part of this means that we are not that picky about a formal definition of REST and actually quite happy to use our intuition about things as we go along.
+
+At Kiva, our resources are generally the nouns you think of when visiting our site – Loans, Lenders, Field Partners, and Lending Teams. Thus, in true RESTful fashion, if you wanted to fetch data about a loan at Kiva, you'd make an HTTP GET request accompanied by the proper URI for the loan about which you want information. To create a loan, you might send a POST request to a similar URI. Since the Kiva API currently only supports fetching data, you only need to concern yourself with GET requests for now.  
+
+Generally, the RESTful nature of an API is wrapped up on the manner in which that API lets users modify, remove, or fetch data. However, it has some healthy implications for how other very important parts of the API work too.}
+
+Regarding Authorization, it uses Oauth 1.0a protocol to control application access to protected resources.\footnote{ For further information on Oauth check: \url{http://build.kiva.org/docs/conventions/oauth}}
+
+
+\subsection{Data Snapshots}
+
+Since doing multiple requests on the Kiva API can be overbearing, this alternative becomes more handy when bigger volumes of data are requested. This is the ideal format for analyses and visuals, and the one used in this thesis. The snapshot presented was taken on the \printdate{2018-8-20}, containing data from its origin: \printdate{2006-04-16} until \printdate{2017-12-31}.
+
+It contains three different datasets:
+
+\begin{itemize}
+\item \file{loans.csv} Contains information about the loans
+\item \file{loans\_lenders.csv} Contains the mapping of all the lenders of a given loan
+\item \file{lenders.csv} Contains information about the lenders.
+\end{itemize}
+
+\subsubsection{Description of \file{loans.csv}} \label{loans_description}
+The \file{loans.csv} file is the one with highest size: 2.12 GB. It contains \missingcommand{number_loans} rows and 34 variables. To provide an example of how does the information in the website appear on the dataset we include, for a given loan (in this case the loan id = 120122, that can be accessed at \url{https://www.kiva.org/lend/120122}) in \textit{italics}, what is the value encountered. Also, visual support is offered in Figure ~\ref{fig:LoanBrowser}, showing a screenshow of the web browser.
+
+More concretely, the variables found on every file are:
+\begin{itemize}
+\item \textbf{id (1)} \textit{120122}, Unique identifier of every loan.
+\item \textbf{name (2)} \textit{Bun},  Name of the loan requester.
+\item \textbf{original\_language (3)} \textit{English}, Original language of the loan. See Table ~\ref{tab:Loan_Language}.
+\item \textbf{original\_description (4)} \textit{Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.}, Description listed in the loan.
+\item \textbf{translated\_description (5)} \textit{NA} When the \textbf{original\_description (4)} is not in english, the translation to english appears here.
+\item \textbf{funded\_amount (6)} \textit{700}, Amount the loan managed to fund.
+\item \textbf{loan\_amount (7)} \textit{700}, Amount required to fund.
+\item \textbf{status (8)} \textit{funded}, The different status are: fundraising, funded, in\_repayment, paid, defaulted, refunded. 
+\item \textbf{image\_id (9)} \textit{347599}, Unique identifier for the image. There are 1242540 identifiers.
+\item \textbf{video\_id (10)} \textit{NA}, Unique identifier for the video. There are 495 different identifiers.
+\item \textbf{activity (11)} \textit{Grocery Store}, There are 163 different activities.
+\item \textbf{sector (12)} \textit{Food}, There are 15 different sectors. See Table ~\ref{tab:Loan_Sector}.
+\item \textbf{use (13)} \textit{To buy groceries for her new grocery store}, Brief description; what the loan is aimed for.
+\item \textbf{country\_code (14)} \textit{KH}, Country code. There are 94 different categories.
+\item \textbf{country\_name (15)} \textit{Cambodia}, Country Name. See Table ~\ref{tab:Loan_Country}.
+\item \textbf{town (16)} \textit{Kampong Cham Province}, Town
+\item \textbf{currency\_policy (17)} \textit{not shared}
+\item \textbf{currency\_exchange\_coverage\_rate (18)} \textit{NA}
+\item \textbf{currency (19)} \textit{USD}, Currency the Loan is in. There are 75 different factors.
+\item \textbf{partner\_id (20)} \textit{9}, Unique identifier for a partner. There are 464 different partners.
+\item \textbf{posted\_time (21)} \textit{1246610728}, Time in msts the loan was posted.
+\item \textbf{planned\_expiration\_time (22)} \textit{NA}, Time (and date)  in msts the loan is expected to expire.
+\item \textbf{disbursed\_time (23)} \textit{1244703600}, Time (and date) in msts on which the borrower got the loan.
+\item \textbf{funded\_time (24)} \textit{1248360184} Time (and date) in msts the loan got funded.
+\item \textbf{term\_in\_months (25)} \textit{17} Time the loan will remain posted.
+\item \textbf{lender\_count (26)} \textit{25} Number of lenders that have funded the loan.
+\item \textbf{journal\_entries\_count (27)} \textit{1}
+\item \textbf{bulk\_journal\_entries\_count (28)} \textit{1}
+\item \textbf{tags (29)} \textit{\#Animals} Labels associated.
+\item \textbf{borrower\_names (30)} \textit{Bun} Vector containing the names of the borrowers, separated by commas.
+\item \textbf{borrower\_genders (31)} \textit{female} Vector containing the gender of the borrowers, separated by commas.
+\item \textbf{borrower\_pictured (32)} \textit{true} Vector containing a boolean whether the borrower appears in the picture, separated by commas.
+\item \textbf{repayment\_interval (33)} \textit{monthly}. Either \textit{bullet} (111568), \textit{irregular} (529446), \textit{monthly} (777971) or \textit{weekly} (622).
+\item \textbf{distribution\_model (34)} \textit{field\_partner} Either \textit{field\_partner} (1402817) or \textit{direct} (16790).
+\end{itemize}
+
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{Figures/img_loan_no_labels.png}
+\decoRule
+\caption[Example of a Kiva loan on the browser.]{Example of a loan on the browser. Loan\_id = 120122.}
+\label{fig:LoanBrowser}
+\end{figure}
+
+\newpage
+\subsubsection{Tables of \file{loans.csv}}
+In this subsubsection, a summary of some relevant variables can be found. They group the number of loans (being a total of \missingcommand{number_loans}), on different variables.
+\input{Tables/table_Loan_Language.tex}
+\input{Tables/table_Loan_Sector.tex}
+\input{Tables/table_Loan_Country.tex}
+
+\subsubsection{Description of \file{loans\_lenders.csv}}
+Regarding the \file{loans\_lenders.csv}, it acts as a mapping in a one-to-many relationship between loans and lenders. Its size its way lower: 322.7 MB; containing \missingcommand{number_lenders} rows and two variables. Same as for the description of \file{loans.csv}, we include in \textit{italics} the value of the loan 120122.
+\begin{itemize}
+\item \textbf{loan\_id} \textit{120122}, Unique identifier of every loan.
+\item \textbf{lender\_id} \textit{vlasta7274, terrinyc, norm3402, stan7653, brodieandjulie7932, david9344, kazuko6587, denise7998, joannc6734, family6872, t6109, reid, reid, nancy4375, marvin2658, tom5854, tri8862, teamsecular, cristina8587, amanda6636, wandadan8972, anne5946, marketta5407}, all the \textbf{lender\_id} that have participated in the loan, being comma separated.
+\end{itemize}
+% In figure ~\ref{fig:LoanBrowser} the distribution of lenders per loan is shown. The median value is 14.
+% 
+% \begin{figure}
+% \centering
+% \includegraphics[width=\columnwidth]{Figures/loans_lenders_distr.png}
+% \caption[Distribution of lenders per loan]{Distribution of lenders per loan}
+% \label{fig:distrlenders}
+% \end{figure}
+
+\subsubsection{Description of \file{lenders.csv}}
+
+Regarding the \file{lenders.csv} file, it contains 2262676 rows and 14 variables. The file size is 193MB. Same as before, we will show in \textit{italics} the values for a observation as an example. In this case, the user is david9344 (\url{https://www.kiva.org/lender/david9344}), that participated in the loan mentioned before. The variables are as follows:
+
+\begin{itemize}
+\item \textbf{id (1)} \textit{david9344}, Unique identifier of every lender.
+\item \textbf{name (2)} \textit{David}, Name of the lender.
+\item \textbf{image\_id (3)} \textit{1563180}, Unique identifier of the image of every lender.
+\item \textbf{city (4)} \textit{Bordentown}, City of residence of the lender.
+\item \textbf{state (5)} \textit{NJ}, State of residence of the lender.
+\item \textbf{country\_code (6)} \textit{US}, Country of residence of the lender. See Table ~\ref{tab:Lender_Country}.
+\item \textbf{member\_since (7)} \textit{1193259239}, Date of registration, in msts. This corresponds to Oct 24, 2007.
+\item \textbf{personal\_url (8)} \textit{NA}, Personal url.
+\item \textbf{occupation (9)} \textit{computer programmer}, Occupation.
+\item \textbf{loan\_because (10)} \textit{Jesus spoke many times about "helping the least of these."}, Reason of participation.
+\item \textbf{other\_info (11)} \textit{I work on a computer system for the governnment and help to make it run better.}, Additional information.
+\item \textbf{loan\_count (12)} \textit{2117}, Number of loans.
+\item \textbf{invited\_by (13)} \textit{Michael}, By whom was invited to Kiva. Unfortunately, it does not correspond to \textbf{id (1)}, therefore it is not possible to match.
+\item \textbf{invited\_count (14)} \textit{2} Number of invitations accepted.
+\end{itemize}
+
+\subsubsection{Tables of \file{lenders.csv}}
+The table below shows the Number of Lenders by Country. Unfortunately, 1650424 (70.3\%) of the Lenders contain a NULL value in this field. 
+\input{Tables/table_Lenders_Country.tex}
+
+\subsubsection{Enriching \file{lenders.csv}: Gender}
+Having no data available for lenders' gender, we suggest an approach to classify them. We are dealing with a classification problem: willing to label every lender with the label \textit{male} or \textit{female}. Our approach is, by using a names dictionary (found in \url{https://raw.githubusercontent.com/hadley/data-baby-names/master/baby-names.csv}), predict every lender's gender based on its first name. Unfortunately, we cannot report on accuracy on this classification problem since we do not have labelled data.
+The prediction procedure works as follows:
+
+\begin{itemize}
+  \item Left join the lenders data frame with the names data frame on \textit{name}.
+\begin{itemize}
+    \item If there is a common \textit{name}, keep the \textit{gender} result.
+    \item If there is no common \textit{name}, apply the \textbf{predict\_gender} function, as described in Listing~\ref{lst:predictgender}.
+% described in here
+\end{itemize}
+\end{itemize}
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:predictgender}, caption={R Code to predict a Lender Loan based on First Name}]
+female_names <- unlist(metadata_names[metadata_names$gender=="female",
+                                      'name']))
+male_names <- unlist(metadata_names[metadata_names$gender=="male",
+                                      'name']))
+
+# both female_names and male_names are vectors containing female names and male names
+
+predict_gender <- function(x){
+  # initiate the counter of male to 0
+  male <- 0
+  # initiate the counter of female to 0
+  female <- 0
+  # split the string into different ones.
+  # this is done to identify couples that are registered with both a female and male name
+  # e.g "Jose y Anna"
+  splitted <- unlist(str_split(x,"-|\n| "))
+  # for every splitted string
+  for (i in 1:length(splitted)){
+    # if there is a match with any of the male names in the dictionary, increase the male counter
+    if(splitted[i]%in%male_names){
+      male <- male + 1
+      # if there is a match with any of the female names
+      in the dictionary, increase the female counter
+    } else if (splitted[i]%in%female_names){
+      female <- female + 1
+    }
+  }
+  # return the result
+  return(ifelse(male*female>=1,
+                "couple",
+                ifelse(male>=1,
+                       "male",
+                       ifelse(female>=1,
+                              "female","NA"))))}
+
+\end{lstlisting}
+
+After applying the prediction procedure for gender, the results are summarized in Table ~\ref{tab:lenders_gender}.
+There is an exact name match in \missingcommand{lenders_exact_reach}\% of the cases. By applying the \textbf{predict\_gender} function, the number of gender fields populated reaches \missingcommand{lenders_gender_reach}\%. As shown in the listing~\ref{lst:predictgender}; by using the \textbf{predict\_gender} function a new category is created: \texttt{couple}. \texttt{couple} is returned when in a string there is a match of both a name labelled as male and a match of a name labelled as female. \textit{Juan y Alejandra} would be labelled as \texttt{couple}.
+\input{Tables/table_lenders_gender.tex}
+
+The approach to obtain lender's gender has differed from other related work. In \textcite{Galak2010}, their approach consisted of scrapping the pictures of the lenders and then, by using Amazon Mechanical Turk service, two independent AMT users would code their gender. 
+
+\subsubsection{Enriching \file{lenders.csv}: Occupation}
+Since the variable Occupation was an open string, meaning that the lender could type its occupation, a lot of variation was originated. We are willing to group those categories by using Regular Expressions. \newline
+In the \textit{lenders} dataset, the \textit{occupation} does not contain any value for \missingcommand{n_lenders_occupation_null}\%. With the suggested grouping, \missingcommand{n_lenders_occupation_yes_matched}\% end up with a occupation group assigned and \missingcommand{n_lenders_occupation_no_matched}\% ends up being the lenders who did have a string in the \textit{occupation} field but did not match any of the suggested \textit{RegEx Pattern}. \newline
+The groups, shown by group size and Regular Expressions matches seeked, are displayed in Table ~\ref{tab:lenders_occupation}.
+\input{Tables/table_Lenders_Occupation.tex}
+
+The approach to obtain lender's occupation has differed from other related work. In \textcite{Galak2010}, their approach consisted of using Amazon Mechanical Turk service, where two independent AMT users would assign a description to one of their 15 occupations categories. 
+
+

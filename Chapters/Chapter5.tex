@@ -1,0 +1,353 @@
+% Chapter Template
+
+\chapter{Loans Images} %Main chapter title
+
+\label{Chapter5} 
+%Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+
+\section{Introduction}
+This chapter is focused on working on our borrower image hypothesis:
+\begin{tcolorbox}
+\textbf{H6:} Machine Learning can be used to extract expression labels on images.
+\end{tcolorbox}
+
+\begin{tcolorbox}
+\textbf{H7:} The borrowers face expression on the image has an impact on the loan performance.
+\end{tcolorbox}
+
+In the past, it has already been attempted how graphical information (as in pictures) explained loan performance. An example is \parencite{Jenq2011}, that aimed to investigate objective loan information, pictures and textual descriptions as determinants of individual charitable giving. In it, Research Assistants were asked to assess each photograph for qualities such as the borrower's appearance, age, gender, perceived honesty, and skin color on. Even though in this study multiple Research Assistants coded manually on the same picture to ensure consistency, the perception of a human being is not as stable as an Artificial Intelligence algorithm would be. \par
+In the following chapter, we explore how, by using state of the art algorithms, facial expressions can be extracted from images. We finally seek if this facial expressions do have any impact on lender preferences.
+
+\section{Data Collection}
+In this thesis, we will make use of Google's Cloud Machine Learning Engine\footnote{https://cloud.google.com/vision/} and Microsoft's Azure Facial Recognition Software \footnote{https://azure.microsoft.com/en-us/services/cognitive-services/face/}. They have been chosen because of their cutting edge technology and API access.
+
+
+\subsection{Limitations}
+Unfortunately, this is the section of the thesis that was less scalable. The bottleneck resided in obtaining the images as Kiva would block the client when realizing brute force requests. This made the data collection way slower.
+On the other hand, both APIs are not free. Both require credit card authorisation and even though free trials were used during this analysis, aiming for a very high amount would suppose monetary cost.
+
+\subsection{Working with a Subset}
+Because of the already explained limitations, we considered desirable to work with a subset of data. In order to reduce variance of the data due to non-interested variables, we aim to select a homogeneous subset. To do so, some restrictions are imposed in the original dataset, resulting in a sample of size 2696. The restrictions can be summarized on the Listing~\ref{lst:subsetting_data}:
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:subsetting_data}, caption={R Code to select a subset}]
+dt <- loans %>%
+         # Country is Philippines
+  filter(country_name=="Philippines", 
+         # Partner Id is 145
+         partner_id==145) %>%         
+        # Posted Date is after 2016-03-01
+  filter(to_date(posted_time)>='2016-03-01', 
+         # Posted Date is before 2016-04-01
+         to_date(posted_time)<'2016-04-01') %>% 
+         # There is only ONE borrower; and is FEMALE
+  filter(borrower_genders=="female",  
+         # There is only ONE borrower IN THE PICTURE
+         borrower_pictured=="true",   
+         # The repayment interval is irregular
+         repayment_interval=="irregular", 
+         # The distribution model is through field partner
+         distribution_model=="field_partner",
+         # The sector Name is either Agriculture, Food or Retail
+         sector_name%in%c("Agriculture","Food","Retail")) 
+\end{lstlisting}
+
+
+\subsection{Scrapping the images}
+With Kiva not offering any method to obtain the image via API, web scrapping is used. The R library \texttt{rvest} becomes very handy to make the process less tedious.
+The process is as simple as accessing the different HTML nodes of the webpage and then extracting the matching Regular Expression that contains an image. It is shown in Listing~\ref{lst:obtainimage}.
+
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:obtainimage}, caption={R Code to obtain a loan image}]
+
+get_image_link <- function(x){
+
+  url <- paste0("https://www.kiva.org/lend/",x) 
+  link <- read_html(url) %>%
+    html_nodes(xpath='//*[@id="main"]') %>%
+      html_nodes('div') %>%
+      html_nodes('div') %>%
+      html_nodes('div') %>%
+      html_nodes('figure') %>%
+      as.character() %>%
+      str_extract(pattern = "https://.*.jpg") 
+  if(!identical(link,character(0))){
+    return(link)
+  } else {
+    return(NA)
+  }
+}
+
+\end{lstlisting}
+
+
+\subsection{Google Cloud Machine Learning Engine}
+Among many of Google Cloud Platform Products, Google has a dedicated section to Artificial Intelligence. 
+Inside Artificial Intelligece \& Machine Learning Products, users can either train (by providing training data) or use a pre-trained model. The use case of this problem was to use the pre-trained model; because we did not have a labelled dataset. \par
+The product used has been the \textbf{Cloud Vision API}, which "Integrates Google Vision features, including image labeling, face, logo, and landmark detection, optical character recognition (OCR), and detection of explicit content, into applications.". \par
+The way to handle the requests has been through the build in library in R \texttt{RoogleVision} \footnote{https://www.r-bloggers.com/google-vision-api-in-r-rooglevision/} by the use of POST methods.
+We then created a custom function where, by providing a link to a image, we would request the feature \texttt{FACE\_DETECTION}. \par
+Many results are returned, such as face coordinates of the \texttt{RIGHT\_OF\_LEFT\_EYEBROW}, but the ones that were of interest were the face emotion labels. \par
+The retrieved results of interest is a vector that contains, for every identified face, different variables: \texttt{joy, sorrow ,anger ,surprise ,underExposed ,blurred ,headwear} and a categorical ordinal value for every variable: \texttt{very unlikely, unlikely, possible, likely, very likely}.
+The R Code is shown in the Listing~\ref{lst:api_google}.
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:api_google}, caption={R Code to call the Google API and store the results}]
+
+# Reads a JSON file with the credentials.
+# This credentials are not found on the public Github repository;
+# as they were linked to my personal account with my credit card.
+# The credentials can be downloaded on Google's Cloud Shell.
+creds = fromJSON('credentials/credentials.json')
+
+# sets the options from the credentials file
+options("googleAuthR.client_id" = creds$installed$client_id) 
+options("googleAuthR.client_secret" = creds$installed$client_secret)
+
+options("googleAuthR.scopes.selected" = c("https://www.googleapis.com/auth/cloud-platform"))
+
+# Authorizes googleAuthR to access your Google user data
+googleAuthR::gar_auth()
+
+# Creates a custom function to retrieve the data
+get_google_response <- function(x){
+  # calls the function 
+  dt <- getGoogleVisionResponse(x,
+                                feature = "FACE_DETECTION") [1,]
+  # establish two conditions to return NA in case of unvalid results
+  if(dt=="No features detected!"){
+    return(rep(NA,9))
+  } else if (ncol(dt)<9){
+    return(rep(NA,9))
+  # returns a vector with the desired output
+  } else {
+    res <- c(dt$detectionConfidence,
+             dt$landmarkingConfidence,
+             dt$joyLikelihood,
+             dt$sorrowLikelihood,
+             dt$angerLikelihood,
+             dt$surpriseLikelihood,
+             dt$underExposedLikelihood,
+             dt$blurredLikelihood,
+             dt$headwearLikelihood)
+    return(res)    
+  }
+}
+\end{lstlisting}
+\subsubsection{Output}
+As mentioned before, the original dataset for this section is a subset consisting of 2696 observations. Out of the 2696 requests to the Google Vision API, there has been 2448 (90.80\%) valid responses. \par
+However, based on the Output shown in Figure~\ref{fig:G_output}, there are some categories that are \textit{almost} always labelled as \texttt{VERY\_UNLIKELY}. Those are \texttt{anger, blurred, surprise ,underExposed}. Due to their unexisting variance, they are dropped at this point from the analysis. Also, since the focus is on faces expressions, \texttt{headwear} is dropped at this point too.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{Figures/C5_images/plot_google_out.png}
+\caption{Google's Vision Output (as a Table)}
+\label{fig:G_output}
+\end{figure}
+
+
+
+\subsubsection{From ordinal data to continuous data}
+Regarding Google Output, 
+\blockquote{
+Results are categorized based on how likely they are to represent a match. The likelihood is determined by the number of matching elements a result contains. The Cloud Data Loss Prevention (DLP) API uses a bucketized representation of likelihood, which is intended to indicate how likely it is that a piece of data matches a given \texttt{InfoType}.} \par
+However, bucketizing the scores produces a loss of information.
+We are facing then, a Likert scale that for further simplicity in the analysis, we are willing to convert it to a continuous variable while minimizing information loss. 
+We assume this \textit{bucketized representation of likelihood} is done with buckets of the same distance. Then, the conversion to continuous data can be done through the following function (see Listing~\ref{lst:converting_numerical_continuous}):
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:converting_numerical_continuous}, caption={R Code to convert the bucket values to numerical}]
+google_factor_to_numeric <- function(x){
+  if (is.na(x)){
+    return(NA)
+  } else if (x=="VERY_UNLIKELY") {
+    return(0)
+  } else if (x=="UNLIKELY") {
+    return(0.25)
+  } else if (x=="POSSIBLE") {
+    return(0.5)
+  } else if (x=="LIKELY") {
+    return(0.75)
+  } else if (x=="VERY_LIKELY") {
+    return(1)
+  } else {
+    return(NA)
+  }
+}
+\end{lstlisting}
+
+\subsection{Microsoft Azure}
+Regarding Microsoft, we have made use of its Facial Recognition Software: Face API. It offers a very similar product than Google, describing it as "Detect one or more human faces in an image and get back face rectangles for where in the image the faces are, along with face attributes which contain machine learning-based predictions of facial features. The face attribute features available are: Age, Emotion, Gender, Pose, Smile, and Facial Hair along with 27 landmarks for each face in the image." \par
+%
+In this case, there was no already existing library to make it friendly. However, by making use of the \texttt{httr} library in R, we managed to handle the requests by the use of POST methods.
+\footnote{https://www.r-bloggers.com/using-microsofts-azure-face-api-to-analyze-videos-in-r/} by the use of POST methods. See Listing~\ref{lst:api_azure} for R Code reference.
+%
+Exactly the same as for Google, we explicited our query to \texttt{returnFaceAttributes}, only aiming at \texttt{emotion}. Other possibilities within \texttt{returnFaceAttributes} included \texttt{age,gender,hair,makeup,accessories}.
+Regarding the output, Azure returns a numeric value for the following categories for every identified face: \texttt{anger, contempt, disgust, fear, happiness, neutral, sadness, surprise}. The sum of this numeric values for every picture object equals to one.
+
+
+\begin{lstlisting}[language={R}, frame={single}, label={lst:api_azure}, caption={R Code to call the Google API and store the results}]
+
+end.point <- "westeurope.api.cognitive.microsoft.com"
+key1 <- "" #personal and not shareable
+
+get_azure_response <- function(x){
+
+  # does the POST method
+  # inside the URL the requests are specified:
+  # returnFaceId=false
+  # returnFaceLandmarks=false
+  # returnFaceAttributes=emotion
+  
+  res <- httr::POST(url = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=false&returnFaceAttributes=emotion",
+              body = paste0('{"url":"',x,'"}'),
+              add_headers(.headers = c("Ocp-Apim-Subscription-Key" = key1)))
+  
+  # res is an object of category "response".
+  # we aim to access its content.
+  
+  # check for valid results
+  if(length(httr::content(res))>0){
+  # return valid results
+    return(unlist(httr::content(res)[[1]]$faceAttributes$emotion,
+                  use.names=FALSE))  
+  } else {
+  # returns NA
+    return(rep(NA,8))
+  }
+}  
+
+\end{lstlisting}
+
+\subsubsection{Output}
+Regarding Microsoft's Azure output, valid responses were in 2306 (85.53\%) of the cases, 5.24p.p. lower than Google's Vision.
+As it can be seen in Figure~\ref{fig:A_output}, most of the scores are assigned to \texttt{happiness, neutral}, remaining low scores for the other variables.
+However, its responses register more variability in the whole set of variables. None of them is dropped and all the variables are used in the following sections.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\columnwidth]{Figures/C5_images/plot_azure_out.png}
+\caption{Microsoft's Azure Output (as Boxplot)}
+\label{fig:A_output}
+\end{figure}
+
+
+\subsection{Example Visual Output}
+In order to give a visual example of the results, please see Figures~\ref{fig:loan_1033} and ~\ref{fig:loan_1038}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\columnwidth]{Figures/C5_images/img_loan_recognition_1033283.jpg}
+\caption{Loan 1033283: Image and Output}
+\label{fig:loan_1033}
+\bigbreak
+\includegraphics[width=.7\columnwidth]{Figures/C5_images/img_loan_recognition_1038440.jpg}
+\caption{Loan 1038440: Image and Output}
+\label{fig:loan_1038}
+\end{figure}
+% 
+% \subsection{Output Summary}
+% In this subsection a summary of the output of the data collection is provided.
+% Working with the original sample of 2696 observations, the API returned results for both in XX cases. It has been XX of the cases when no output was provided by neither of the APIs. It is in YY cases when there is an output for Azure and not for Google; whereas in XX of the occasions it exists for Google and it does not for Azure.
+% 
+% On the other hand, Google presented a \texttt{detectionConfidence}. In figure XX a summary of this variable is attached.
+
+\section{Data Modelling}
+
+% \input{Tables/table_img_retrieving.tex}
+% 
+% \input{Tables/table_img_out_azure.tex}
+% 
+% \input{Tables/table_img_out_google.tex}
+
+\subsection{Exploratory Factor Analysis}
+Now that we have a set measured variables coming from two different sources, our goals are:
+
+\begin{itemize}
+\item \textbf{determine underlying factors/constructs}, so that we find a meaningful way to group the variables
+\item \textbf{understand the relationship between the variables}, as we are expecting high correlations between the two data sources.
+\end{itemize}
+
+For the type of data and our goals, the most appropiate technique to use is \textbf{Exploratory Factor Analysis (EDA)}. 
+
+In Figure~\ref{fig:FA_vble} the variables Loadings are plotted in the first two dimensions. On the other hand, the Loadings are summarized in Table~\ref{Tab:Load}. The conclusions that can be extracted are:
+\begin{itemize}
+\item The first dimension explains XX of the variance. It is mostly represented by three variables: \texttt{A\_happiness, G\_joy} (that are highly positive correlated) and \texttt{A\_neutral}, highly negative correlated to the previous two. This would support the sixth hypothesis:
+\begin{tcolorbox}
+\textbf{H6:} Machine Learning can be used to extract expression labels on images.
+\end{tcolorbox}
+Due to the fact that both APIs are able to distinguish between high levels of joy and low ones.
+\item The second dimension explains XX of the variance. It is highly influenced by \texttt{A\_Anger, A\_Disgust} and \texttt{G\_sorrow}.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\columnwidth]{Figures/C5_images/MFA_Var.png}
+\caption{Factor Analysis: Variable Plot}
+\label{fig:FA_vble}
+% \bigbreak
+% \includegraphics[width=.7\columnwidth]{Figures/C5_images/MFA_Eig.png}
+% \caption{Factor Analysis: Eigenvalues Plot}
+% \label{fig:FA_eigen}
+\end{figure}
+
+\input{Tables/table_img_loadings.tex}
+
+\subsection{Multiple Linear Regression}
+After realizing the \textbf{EDA} and gathering some insights on the relationship of the variables obtained from the Image Recognition APIs, we are willing to work on our last hypothesis:
+\begin{tcolorbox}
+\textbf{H7:} The borrowers face expression on the image has an impact on the loan performance.
+\end{tcolorbox}
+To do so, the methodology used will be a Multple Linear Regression \textbf{MLR}.
+In the \textbf{MLR}, we aim to explain a dependent variable as a function of several explanatory variables. Our dependent variable will be \texttt{time\_to\_fund}. The \texttt{time\_to\_fund} for a given loan is the difference between the variables \texttt{posted\_time} and \texttt{raised\_time}. The \texttt{time\_to\_fund} median is 90 hours.
+We are going to propose several models. The variables that are going to be common in all of them are:
+\begin{itemize}
+\item \texttt{is\_monday}: After realizing Exploratory Data Analysis, we observed that those loans whose \texttt{posted\_time} is a Monday in the time zone \textit{America - Los\_Angeles} (as Kiva HQ are in San Francisco, California) have significantly shorter funding time.
+\item \texttt{is\_retail}: Out of the 3 different \texttt{sector\_name} used (Agricultur, Food and Retail), Retail had a significantly longer funding time.
+\item \texttt{loan\_amount}: We expect that a higher loan amount causes the funding time to be longer.
+\end{itemize}
+Willing to understand the impact of Face Labels, we'll suggest two different sets of variables.
+\begin{itemize}
+\item The first set, named \textbf{Manual\_Scores} will be a manual selection of some scores obtained. In this case, interpretability of the variables will be easier. The variables created will be:
+\subitem \texttt{happiness}. It is a construction of \texttt{G\_joy+A\_happiness-A\_neutral}.
+\subitem \texttt{negative\_others}. It is a construction of \texttt{A\_anger + A\_disgust + G\_sorrow + A\_sadness + A\_contempt + A\_fear}.
+\item The second set, named \textbf{Factor\_Scores} will contain the individual scores resulting by the Exploratory Factor Analysis. The first three dimensions are included:
+\subitem \texttt{FA\_1} First Dimension Individual Scores of the \textbf{EDA}
+\subitem \texttt{FA\_2} Second Dimension Individual Scores of the \textbf{EDA}
+\subitem \texttt{FA\_3} Third Dimension Individual Scores of the \textbf{EDA}
+\end{itemize}
+
+On the other hand, we will also present the two alternatives as the response variable: \texttt{time\_to\_fund} and \texttt{log(time\_to\_fund)}.
+Three different models are specified:
+\begin{itemize}
+\item Multiple Linear Regression Model
+\item Multiple Linear Regression Model with Dependent Variable transformed (log-linear Model)
+\item Logistic Model
+\end{itemize}
+
+\subsection{Results}
+After running all the models, the AIC and BIC show as great candidates with the log-linear Model. The \textbf{Manual\_Scores} shows a signficant coefficient for \texttt{happiness} but \texttt{negative\_others} is not significant. The \textbf{Factor\_Scores} shows a signficant coefficient for \texttt{FA\_1}, \texttt{FA\_2} but \texttt{FA\_3} is not significant.
+We proceed to evaluate that the assumptions of the linear model are held:
+\begin{itemize} 
+\item The mean of the residuals is 0.
+\item Homoscedasticity of residuals or equal variance
+\item No autocorrelation of residuals
+\item Normality of residuals
+\end{itemize}
+Apart from normality of residuals, all of them are held. The normality of residuals, as seen in the QQ-plot, is weakly violated, being then not a major concern.
+
+Regarding the interpretation of the coefficients, being a Log-Linear Regression, $ln(y) = \beta_0 + \beta_1 * ln(x_1) + \epsilon$, a increase of x by one unit, expects an increase of ${\beta_1}*{100}\%$ units of y. \par
+As in model (2), the coefficient for \texttt{happiness} is -0.046. Being the difference of the 75th and 25th percentiles of \texttt{happiness} $P_{75}-P_{25}=2.19$, the difference of a given image to be in the 75th percentile and the 25th percentile modifies the loan funding time by more than 10\%.
+Model (5) estimates the coefficient of the first dimension of EFA to be -0.034 (significant with $\alpha=0.05$) and the coefficient of the second dimension of EFA to be -0.034 (not significant with $\alpha=0.05$, but significant at $\alpha=0.1$). 
+\section{Further Work}
+The findings motivate the increase of sample size in order to get more robust results. Finding that either both the first and second dimensions of EFA impact the performance of a loan is surprising. \par
+On the other hand, other variables could be used, such as the resolution of the picture. The interaction of the face labels with the sentiment analysis of the description, working on the hypothesis of "similar images and description reduce the funding time of the loan". The hypothesis would be that when the image and the description go in the same direction (both happy or both sad), the loan performs better but when they go into opposite (one happy and the other sad), it harms loan performance.
+\input{Tables/lm_img.tex}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\columnwidth]{Figures/C5_images/img_validation_log_lm.png}
+\caption{Validation of log-linear model}
+\label{fig:validation}
+\end{figure}

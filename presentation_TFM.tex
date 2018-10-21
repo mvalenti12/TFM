@@ -1,0 +1,451 @@
+\documentclass{beamer}
+\usepackage[backend=bibtex,style=authoryear,natbib=true]{biblatex} % Use the 
+\addbibresource{library.bib} % The filename of the bibliography
+\usepackage{beamerthemeshadow}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{multirow}
+\lstset{language=R}
+\begin{document}
+\title{Kiva.org: Exploring Relationships in Online Crowdfunding}
+\author{Marc Valenti \\ Ines Alegre\inst{1} \\ Xavier Tort\inst{2}}
+\institute[Universities of Somewhere and Elsewhere] % (optional, but mostly needed)
+{
+  \inst{1}%
+  Department of Managerial Decision Sciences\\
+  IESE
+  \and
+  \inst{2}%
+  Department of Statistics and Operations Research\\
+  Universitat Politcnica de Catalunya}
+
+\date{22nd of October of 2018}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\section{Findings} 
+\begin{frame}\frametitle{SPOILER: Findings}
+In Kiva, an online lending platform:
+\begin{itemize}
+\item Lending preferences (gender, country and sector) differ on lender characteristics (gender, country and profession).
+\item The descriptions written by the Partners can be attributed to them and visualized over time.
+\item The borrower's face expression determines the loan performance.
+\end{itemize}
+\end{frame}
+
+
+
+% \begin{frame}\frametitle{Table of contents}
+% \footnotesize{
+% \tableofcontents
+% }
+% \end{frame} 
+
+\section{About Kiva} 
+% \subsection{Abstract}
+% \begin{frame}\frametitle{Abstract}
+% \footnotesize{Internet has completely altered communications around the world. The sector of crowdfunding has widely benefited from its appearance. In this thesis, we aim to contribute to the current research in online crowdfunding by working with data from Kiva.org, one of the world's main online lending platforms. \par 
+% In it, we review the current research to expand the present knowledge of it by focusing on several independent aspects. We focus on (1) how during the decision process of the lender, similarities with the borrower (such as gender, country or occupation) are relevant. Attention is also brought to the (2) descriptions of the loans, aiming to observe how they differenciate among each other and how they evolve over time. Finally, (3) Machine Learning is used to perform Image Recognition in order to encode borrower face emotions from their pictures, while concluding its importance in a rapid funding rate of a loan.}
+% \end{frame}
+\begin{frame}\frametitle{About Kiva: Definition and Data}
+\footnotesize{
+\href{https://www.kiva.org}{Kiva} is a non-profit organization. It is an online platform focused on micro-loans (with a median loan of 500\$) that aims to connect borrowers and lenders. Most of this loans are for third world countries. 1.5M loans have been posted since their origin (2005), backed by more than 2.3M lenders.  \par
+\vspace{0.5cm}
+Kiva has facilitated third parties access to their data by developing APIs and providing data snapshots. Thanks to this accessibility, its data has been used in ~30 different research papers or thesis.}
+
+% Since its origin, almost 1.5M loans have been posted, reaching an impressive funding rate of ~95.5\%. During 2017, ~225000 loans were created, raising a total amount of more than 150M\$. \par
+% On the other side, the number of lenders is 2.35M; ~180000 of them joining on 2017. \par}
+\end{frame}
+
+\begin{frame}\frametitle{About Kiva: Agents}
+\footnotesize{
+\textbf{Kiva} is the platform that connects \textbf{the three following agents}, agregates and transfers the capital.
+The three main agents in the platform:
+\begin{itemize}
+\item \textbf{Borrowers}, users that request loans. They can be charged interest rate fees from the \textbf{Partners}.
+\item \textbf{Partners}, mostly a local microfinance institution acting as a bridge between \textbf{Borrowers} and \textbf{Kiva}. Can charge interest rate, being reflected on \textbf{Borrower}'s side.
+\item \textbf{Lenders}, users that have the option of contributing with at least 25\$ to the different available projects. \textbf{No interest rate is received} from the loans.
+\end{itemize}}
+\end{frame}
+
+\section{Scope of the Thesis} 
+
+\begin{frame}\frametitle{Objective and Hypothesis}
+\footnotesize{
+The main objective of the thesis is to \textbf{contribute to the current research in online crowdfunding}.
+The following hypothesis are to be validated:}
+
+\tiny{
+\begin{block}{On the relationship between lenders and borrowers:}
+\begin{itemize}
+\item \textbf{H1:} Lender characteristics (such as gender, country and profession) determine their lending preferences (as in gender, country and sector).
+\end{itemize}
+\end{block}
+
+\begin{block}{On the loan description:}
+\begin{itemize}
+\item \textbf{H2:} Every partner has a template for their descriptions; being descriptions distinguishable across partners.
+\item \textbf{H3:} Partners may change their description template over time and copy other partners.
+\end{itemize}
+\end{block}
+
+\begin{block}{On borrowers' image:}
+\begin{itemize}
+\item \textbf{H4:} Machine Learning can be used to extract expression labels on images.
+\item \textbf{H5:} The borrowers face expression on the image has an impact on the loan performance.
+\end{itemize}
+\end{block}
+}
+\end{frame}
+
+\section{Lender-Borrower Relationship}
+
+\subsection{Hypothesis}
+\begin{frame}\frametitle{Chapter Hypothesis}
+\begin{block}{On Lender-Borrower Relationship}
+\textbf{H1:} Lender characteristics (such as gender, country and profession) determine their lending preferences (as in gender, country and sector).
+% \begin{itemize}
+% \item \textbf{H1.1}: Gender:  Is there any relationship between the gender ofthe borrowers and the gender of the lenders?  How strong is it?
+% \item \textbf{H1.2}: Geographical area:  Is there any relationship betweenthe nationalities of the borrowers and the nationalities of thelenders?  Is it stronger for any case?
+% \item \textbf{H1.3}: Occupations: Is there any relationship between the sector of the borrowers and the occupations of the lenders? Is it stronger for any case?
+% \end{itemize}
+\end{block}
+\end{frame}
+
+\subsection{Literature Review}
+\begin{frame}\frametitle{Litearture Review}
+\begin{itemize}
+\item \textcite{Galak2010} using Kiva: lenders prefer to give to those who are more like themselves (\textbf{(gender, occupation, and first name initial)}).
+\item \textcite{Lin2013}, using Prosper: transactions are more likely to occur between parties in the same geographical area
+\item \textcite{Greenberg2015}, using Kickstarter: projects founded by female founders are tended to be backed by more females (than projects not founded by females).
+\end{itemize}
+\end{frame}
+
+
+% \subsection{Data Collection}
+% \begin{frame}\frametitle{Data Collection}
+% Lenders Information was expanded by adding two variables: Gender (predicted using Lenders Name) and Professions (using Regular Expressions from an open field). \par
+% \vspace{0.5cm}
+% When merging Lenders and Borrowers:
+% \begin{itemize}
+% \item Computationally costly and non-scalable (linear complexity: \textit{O(n)}).
+% \item Sampled 250000 observations
+% \item Use of the \texttt{parSapply} function of the \texttt{parallell} package.
+% \end{itemize}
+% \end{frame}
+
+% methodology
+\subsection{Summary}
+\begin{frame}\frametitle{Summary}
+\footnotesize{
+\begin{block}{Continuous Data: Gender}
+Different models were suggested to find the relationship between the number of female borrowers and the number of female lenders (exhibiting a correlation of 0.2); and how this was affected by the sector the borrower was. None of them could be validated.
+\end{block}
+
+\begin{block}{Categorical Data: Countries and Occupations}
+Used \textbf{Correspondence Analysis} and \textbf{Mosaic Plots} to explore similarities.
+Both $\chi^2$ statistics reject the Null Hypothesis of independence, exhibiting then stronger deviations and therefore associations. This suggests that every Country has lending preferences. Finally, Correspondence Analysis has not been able to show \textit{similar (based on history, region or race for example)} countries with \textit{similar lending} behaviours. \par
+\end{block}
+}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Correspondence Analysis for Country}
+\begin{figure}
+% \includegraphics[width=0.5\textwidth]{Figures/Contingency/Mosaic_Country.png}%
+% \includegraphics[width=0.5\textwidth]{Figures/Contingency/CA_Country.png}
+% \caption{Mosaic Plot and Correspondence Analysis for Country}
+\includegraphics[width=0.8\textwidth]{Figures/Contingency/CA_Country.png}
+% \caption{Mosaic Plot and Correspondence Analysis for Country}
+\end{figure}
+\end{frame}
+
+
+\section{Loans Description}
+\subsection{Hypothesis}
+\begin{frame}\frametitle{Chapter Hypothesis}
+\begin{block}{On Loans Description:}
+\begin{itemize}
+\item \textbf{H2:} Every partner has a template for their descriptions; being descriptions distinguishable across partners.
+\item \textbf{H3:} Partners may change their description template over time and copy other partners.
+\end{itemize}
+\end{block}
+\end{frame}
+
+\subsection{Text Processing}
+\begin{frame}\frametitle{Text Processing}
+\tiny{
+\begin{tcolorbox}
+Bun T., 42, is married and lives in Kampong Cham Province with her six children. Her husband moved to work in Phnom Penh City as a construction worker with an income of US\$8 per day. She has made up her mind that she wants to take a loan of US\$700 to create a business of selling groceries at her house with the assistance of her children. If she succeeds in her business plan, she will find a job suitable for her husband to work back in his hometown.
+\end{tcolorbox}
+
+\begin{tcolorbox}
+bun t married lives kampong cham province six children husband moved work  phnom penh city   construction worker income  us per day made  mind wants take loan  us  create  business selling groceries house assistance children succeeds business plan  will find  job suitable husband  work back hometown
+\end{tcolorbox}
+}
+
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{Figures/dtmr_img.jpg}%
+\end{figure}
+\end{frame}
+
+\begin{frame}\frametitle{Dimensionality Reduction}
+Three different approaches are considered:
+\begin{itemize}
+\item Multidimensional Scaling using the Jaccard similarity
+\item Multidimensional Scaling using the Cosine similarity
+\item Multidimensional Scaling using Euclidean distance (Principal Component
+Analysis)
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Dimensionality Reduction}
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{Figures/plot_distances_descriptions.png}
+\end{figure}
+\end{frame}
+
+\subsection{Dynamic Visualization}
+\begin{frame}\frametitle{Evolution of Descriptions Over Time}
+\begin{itemize}
+\item \href{file:///Users/marcvalenti/TFM/img_gif/kenya/animation.gif}{Evolution of Kenya Descriptions}
+\item \href{file:///Users/marcvalenti/TFM/img_gif/peru/animation.gif}{Evolution of Perú Descriptions}
+\item \href{file:///Users/marcvalenti/TFM/img_gif/Philippines/animation_philippines.gif}{Evolution of Philippines Descriptions}
+\end{itemize}
+\end{frame}
+
+\subsection{Authorship Attribution}
+\begin{frame}\frametitle{Authorship Attribution}
+\includegraphics[width=0.8\textwidth]{Figures/plot_acc_time_svm_descriptions.png}
+% \caption{Evaluation of Number of features, transformations and Algorithms to classify Partners' Descriptions}
+\end{frame}
+% 
+% \begin{frame}{Evolution of Descriptions by Partner: Peru}
+% \animategraphics[loop,controls,width=\linewidth]{20}{img_gif/peru/plot_}{01}{10}
+% \end{frame}
+
+
+% 
+% \begin{frame}\frametitle{Text Processing}
+% \footnotesize{
+% \begin{tabular}{ccccccccccccccccccccc}
+% \hline
+%        & \rot{business} & \rot{children} & \rot{city} & \rot{groceries} & \rot{house} & \rot{husband} & \rot{income} & \rot{lives} & \rot{loan} & \rot{made} & \rot{married} & \rot{province} & \rot{selling} & \rot{wants} & \rot{will} & \rot{work} & \rot{able} & \rot{ahead} & \rot{continues} & \rot{grateful} \\ \hline
+% 120122 & 2        & 2        & 1    & 1         & 1     & 2       & 1      & 1     & 1    & 1    & 1       & 1        & 1       & 1     & 1    & 2    & 0    & 0     & 0         & 0        \\
+% 661165 & 2        & 0        & 1    & 0         & 0     & 0       & 1      & 1     & 0    & 0    & 0       & 0        & 0       & 0     & 1    & 0    & 1    & 1     & 1         & 1        \\
+% 251336 & 1        & 0        & 0    & 0         & 2     & 0       & 0      & 0     & 2    & 1    & 1       & 0        & 0       & 0     & 1    & 0    & 0    & 0     & 0         & 0        \\
+% 423290 & 0        & 0        & 0    & 0         & 0     & 0       & 0      & 0     & 0    & 0    & 0       & 0        & 0       & 0     & 0    & 0    & 0    & 0     & 0         & 0        \\
+% 421136 & 1        & 1        & 0    & 0         & 1     & 0       & 0      & 0     & 1    & 0    & 1       & 0        & 0       & 0     & 1    & 0    & 1    & 1     & 0         & 0        \\ \hline
+% \end{tabular}
+% }
+% \end{frame}
+
+\section{On Borrowers' Image} 
+\subsection{Hypothesis}
+\begin{frame}\frametitle{Chapter Hypothesis}
+\begin{block}{On Borrowers' Image:}
+\begin{itemize}
+\item \textbf{H4:} Machine Learning can be used to extract expression labels on images.
+\item \textbf{H5:} The borrowers face expression on the image has an impact on the loan performance.
+\end{itemize}
+\end{block}
+\end{frame}
+
+\subsection{Literature Review}
+\begin{frame}\frametitle{Litearture Review}
+\textcite{Jenq2011} , in Kiva: pictures and textual descriptions as determinants of individual charitable giving. Research Assistants rate each photograph on borrower's appearance, age, gender, perceived honesty, and skin color. 
+\end{frame}
+
+\subsection{Data Collection}
+\begin{frame}\frametitle{Data Collection}
+Google's Cloud Machine Learning Engine\footnote{https://cloud.google.com/vision/} and Microsoft's Azure Facial Recognition Software \footnote{https://azure.microsoft.com/en-us/services/cognitive-services/face/} are used to perform Image Recognition. They have been chosen because of their cutting edge technology and API access.
+\end{frame}
+
+\begin{frame}\frametitle{Data Collection: Image Retrieving + API Access}
+Process:
+\begin{itemize}
+\item Images were retrieved doing web-scrapping.
+\item Images are passed to the API as a POST method.
+\end{itemize}
+Only a subset of the data (N = 2696) is used. Different restrictions were imposed to reduce the variance.\footnote{Only a female borrower in the sector of Agriculture, Food or Retail, on the country of Philippines, working with partner 145 (\textit{Negros Women for Tomorrow Foundation (NWTF)}), being the loan posted betweeen 2016-03-01 and 2016-04-01}.
+
+\end{frame}
+% 
+% 
+% \begin{frame}[fragile]\frametitle{Data Collection: Retrieving Images}
+% Images not retrievable with the API, so using the R Library \texttt{rvest} instead. 
+% 
+% \begin{lstlisting}[language=R]
+% get_image_link <- function(x){
+% 
+%   url <- paste0("https://www.kiva.org/lend/",x) 
+%   link <- read_html(url) %>%
+%     html_nodes(xpath='//*[@id="main"]') %>%
+%       html_nodes('div') %>%
+%       html_nodes('div') %>%
+%       html_nodes('div') %>%
+%       html_nodes('figure') %>%
+%       as.character() %>%
+%       str_extract(pattern = "https://.*.jpg") 
+% }
+% 
+% \end{lstlisting}
+% \end{frame}
+% 
+% \begin{frame}[fragile]\frametitle{Data Collection: API Access}
+% After Oauth authentificating, APIs are accessed using the \texttt{httr} library, using a POST method.
+% \tiny{
+% \begin{lstlisting}[language=R, frame={single}]
+%   # setting the API end point and secret key
+%   
+% end.point <- "westeurope.api.cognitive.microsoft.com"
+% key1 <- "" #personal and not shareable
+% 
+% get_azure_response <- function(x){
+% 
+%   # does the POST method
+%   # inside the URL the requests are specified:
+%   # returnFaceId=false
+%   # returnFaceLandmarks=false
+%   # returnFaceAttributes=emotion
+%   
+%   res <- httr::POST(url = "https://westeurope.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=false&returnFaceLandmarks=false&returnFaceAttributes=emotion",
+%               body = paste0('{"url":"',x,'"}'),
+%               add_headers(.headers = c("Ocp-Apim-Subscription-Key" = key1)))
+%   
+%   # res is an object of category "response".
+%   # we aim to access its content.
+%   
+%     return(unlist(httr::content(res)[[1]]$faceAttributes$emotion,
+%                   use.names=FALSE))  
+% }  
+% 
+% \end{lstlisting}
+% }
+% \end{frame}
+
+\begin{frame}[plain]
+\frametitle{Data Collection: Graphical Example}
+\begin{figure}
+\includegraphics[width=0.5\textwidth]{Figures/C5_images/img_loan_recognition_1033283_reshape.jpg}%
+% \caption{Loan 1033283: Image and Output}
+\includegraphics[width=0.5\textwidth]{Figures/C5_images/img_loan_recognition_1038440.jpg}
+\caption{Image and Output from Loans 1033283 (left) and 1038440 (right)}
+\end{figure}
+\end{frame}
+
+% \begin{frame}\frametitle{Exploratory Factor Analysis}
+% \begin{figure}
+% \includegraphics[width=0.7\textwidth]{Figures/C5_Images/FA_loadings.png}%
+% \end{figure}
+% \end{frame}
+
+\subsection{Model Specification}
+\begin{frame}[plain]\frametitle{Model Specification}
+\footnotesize{
+\textbf{Dependent variable: time to fund}. The median time to fund is \textbf{90 hours.} \par
+Other \textbf{explanatory variables} included: \texttt{is\_monday} (shorter time), \texttt{is\_retail} (longer time) and \texttt{loan\_amount} (longer time). \par
+\textbf{Two different sets} suggested:
+
+\begin{block}{Manual\_Scores}
+Manual selection of some scores obtained (higher interpretability).
+\begin{itemize}
+\item \textbf{\texttt{happiness = }} \texttt{G\_joy+A\_happiness-A\_neutral}.
+\item \textbf{\texttt{negative\_others = }}.\texttt{A\_anger + A\_disgust + G\_sorrow + A\_sadness + A\_contempt + A\_fear}.
+\end{itemize}
+\end{block}
+
+\begin{block}{Factor\_Scores}
+Individual scores resulting by the Exploratory Factor Analysis. The first three dimensions are included:
+\begin{itemize}
+\item \texttt{FA\_1} First Dimension Individual Scores of the \textbf{EDA}
+\item \texttt{FA\_2} Second Dimension Individual Scores of the \textbf{EDA}
+\item \texttt{FA\_3} Third Dimension Individual Scores of the \textbf{EDA}
+\end{itemize}
+\end{block}
+}
+\end{frame}
+
+\begin{frame}\frametitle{Model Specification}
+Three different models are specified:
+\begin{itemize}
+\item Multiple Linear Regression Model
+\item Multiple Linear Regression Model with Dependent Variable transformed (log-linear Model)
+\item Logistic Model
+\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]\frametitle{Model Results}
+\input{Tables/lm_img_no_title.tex}
+\end{frame}
+
+\begin{frame}\frametitle{Model Results}
+Best specification is the \textbf{Log-Linear Model}.\footnote{The validation of the model is shown in the original document}. \par
+As in model (2: Log-Linear Model and \texttt{Manual\_Scores}), the coefficient for \texttt{happiness} is -0.046. The difference of a given image to be in the 75th percentile of happiness and the 25th percentile of happiness reduces the loan funding time by more than 10\%.\footnote{Being the difference of the 75th and 25th percentiles of \texttt{happiness} $P_{75}-P_{25}=2.19$. 10\% is the result of (-0.046*2.19)} \par
+Model (5 Log-Linear Model and \texttt{Factor\_Scores}) supports strongly with the previous argument while presenting an interesting Second Factor coefficient. \footnote{The coefficient of the first dimension of EFA to be -0.034 (significant with $\alpha=0.05$) and the coefficient of the second dimension of EFA to be -0.034 (not significant with $\alpha=0.05$, but significant at $\alpha=0.1$).} \par
+\end{frame}
+
+\section{Findings} 
+\begin{frame}\frametitle{Further Work}
+In Kiva, an online lending platform:
+\begin{itemize}
+\item Lending preferences (gender, country and sector) differ on lender characteristics (gender, country and profession).
+\item The descriptions written by the Partners can be attributed to them and visualized over time.
+\item The borrower's face expression determines the loan performance.
+\end{itemize}
+\end{frame}
+
+\section{Further Work} 
+\begin{frame}\frametitle{Further Work}
+\begin{itemize}
+\item Personalized feed drives to polarization. 
+\item The resolution of the picture affects loan performance.
+\item The perceived age of the borrower in the picture affects loan performance.
+\item The sentiment analysis of the description affects loan performance.
+\item The interaction between the sentiment of the description and the face expression affects loan performance.
+\end{itemize}
+\end{frame}
+
+% 
+% \section{Conclusions}
+% \begin{frame}[plain]\frametitle{Conclusions}
+% \begin{itemize}
+% \item On the \textbf{Lender-Borrower Relationship}, we explored on three different dimensions: Gender, Country and Occupation-Sector. This dimensions do not show independence and exhibit lenders preferences.
+% \item On the \textbf{Loans Description}, we provide a visual representation of them to see their evolution over time. We demonstrate how the authorship of the text can be almost perfectly identified.
+% \item On the \textbf{Borrower Image}, we use different APIs to extract face expressions of pictures. Then, its contribution to the loan funding time is quantified. Exhibiting happiness significantly reduces the funding time whereas expressing anger does not.
+% % The APIs have difficulties in identifying other expressions rather than happiness.
+% \end{itemize}
+% \blfootnote{All the work is reproducible in \url{https://github.com/mvalenti12/TFM}}
+
+\begin{frame}[plain]{}
+  \centering \Huge
+  \emph{Thank You}
+\end{frame}
+
+% \section{Conclusions}
+% \begin{frame}\frametitle{Conclusions}
+% \begin{itemize}
+% 
+% \end{itemize}
+% \end{frame}
+% \begin{frame}[Results from Google API]
+% \begin{table}[]
+% \begin{tabular}{l|lllll}
+% \cline{2-6}
+%                                       & \multicolumn{1}{l|}{Very Unlikely} & \multicolumn{1}{l|}{Unlikely} & \multicolumn{1}{l|}{Possible} & \multicolumn{1}{l|}{Likely} & \multicolumn{1}{l|}{Very Likely} \\ \hline
+% \multicolumn{1}{|l|}{G\_underexposed} & 2444                               & 4                             & 0                             & 0                           & 0                                \\ \cline{1-1}
+% \multicolumn{1}{|l|}{G\_surprise}     & 2448                               & 0                             & 0                             & 0                           & 0                                \\ \cline{1-1}
+% \multicolumn{1}{|l|}{G\_sorrow}       & 2272                               & 128                           & 35                            & 13                          & 0                                \\ \cline{1-1}
+% \multicolumn{1}{|l|}{G\_joy}          & 1363                               & 296                           & 145                           & 131                         & 513                              \\ \cline{1-1}
+% \multicolumn{1}{|l|}{G\_headwear}     & 2366                               & 18                            & 19                            & 14                          & 31                               \\ \cline{1-1}
+% \multicolumn{1}{|l|}{G\_blurred}      & 2448                               & 0                             & 0                             & 0                           & 0                                \\ \cline{1-1}
+% \multicolumn{1}{|l|}{G\_anger}        & 2448                               & 0                             & 0                             & 0                           & 0                                \\ \cline{1-1}
+% \end{tabular}
+% \end{table}
+% \end{frame}
+
+\end{document}
