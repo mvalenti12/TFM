@@ -5,11 +5,14 @@
 \usepackage{listings}
 \usepackage{tcolorbox}
 \usepackage{xcolor}
+\usepackage{fontawesome}
 \usepackage{multirow}
+\usepackage[utf8]{inputenc}
+\date{}
 \lstset{language=R}
 \begin{document}
 \title{Kiva.org: Exploring Relationships in Online Crowdfunding}
-\author{Marc Valenti \\ Ines Alegre\inst{1} \\ Xavier Tort\inst{2}}
+\author{Marc Valentí \\ Inés Alegre\inst{1} \\ Xavier Tort\inst{2}}
 \institute[Universities of Somewhere and Elsewhere] % (optional, but mostly needed)
 {
   \inst{1}%
@@ -18,11 +21,12 @@
   \and
   \inst{2}%
   Department of Statistics and Operations Research\\
-  Universitat Politcnica de Catalunya}
+  Universitat Politècnica de Catalunya}
 
 
 \begin{frame}
 \titlepage
+
 \end{frame}
 
 \section{Findings} 
@@ -33,6 +37,7 @@ In Kiva, an online lending platform:
 \item The descriptions written by the Partners can be attributed to them and visualized over time.
 \item The borrower's face expression determines the loan performance.
 \end{itemize}
+\raggedleft{\faGithub ~mvalenti12/TFM}
 \end{frame}
 
 
@@ -146,22 +151,12 @@ Different models were suggested to find the relationship between the number of f
 
 \begin{block}{Categorical Data: Countries and Occupations}
 Used \textbf{Correspondence Analysis} and \textbf{Mosaic Plots} to explore similarities.
-Both $\chi^2$ statistics reject the Null Hypothesis of independence, exhibiting then stronger deviations and therefore associations. This suggests that every Country has lending preferences. Finally, Correspondence Analysis has not been able to show \textit{similar (based on history, region or race for example)} countries with \textit{similar lending} behaviours. \par
+Both $\chi^2$ statistics reject the Null Hypothesis of independence, exhibiting then stronger deviations and therefore associations. This suggests that every Country has lending preferences. Finally, Correspondence Analysis has not been able to show \textit{similar (based on history, region or race for example)} countries with \textit{similar lending} behaviours. (See Figure ~\ref{fig:CA_Country} for details)
 \end{block}
 }
 \end{frame}
 
 
-\begin{frame}
-\frametitle{Correspondence Analysis for Country}
-\begin{figure}
-% \includegraphics[width=0.5\textwidth]{Figures/Contingency/Mosaic_Country.png}%
-% \includegraphics[width=0.5\textwidth]{Figures/Contingency/CA_Country.png}
-% \caption{Mosaic Plot and Correspondence Analysis for Country}
-\includegraphics[width=0.8\textwidth]{Figures/Contingency/CA_Country.png}
-% \caption{Mosaic Plot and Correspondence Analysis for Country}
-\end{figure}
-\end{frame}
 
 
 \section{Loans Description}
@@ -193,7 +188,7 @@ bun t married lives kampong cham province six children husband moved work  phnom
 \end{frame}
 
 \begin{frame}\frametitle{Dimensionality Reduction}
-Three different approaches are considered:\footnote{See Figure 4.1.}
+Three different approaches are considered:\footnote{See Fig \ref{fig:DR_distances}}
 \begin{itemize}
 \item Multidimensional Scaling using the Jaccard similarity
 \item Multidimensional Scaling using the Cosine similarity
@@ -202,11 +197,6 @@ Analysis)
 \end{itemize}
 \end{frame}
 
-% \begin{frame}\frametitle{Dimensionality Reduction}
-% \begin{figure}
-% \includegraphics[width=0.8\textwidth]{Figures/plot_distances_descriptions.png}
-% \end{figure}
-% \end{frame}
 
 \subsection{Dynamic Visualization}
 \begin{frame}\frametitle{Evolution of Descriptions Over Time}
@@ -217,13 +207,13 @@ Analysis)
 \end{itemize}
 \end{frame}
 
-\subsection{Authorship Attribution}
-\begin{frame}\frametitle{Authorship Attribution}
-\begin{center}
-\includegraphics[width=0.7\textwidth]{Figures/plot_acc_time_svm_descriptions.png}
-% \caption{Evaluation of Number of features, transformations and Algorithms to classify Partners' Descriptions}
-\end{center}
-\end{frame}
+% \subsection{Authorship Attribution}
+% \begin{frame}\frametitle{Authorship Attribution}
+% \begin{center}
+% \includegraphics[width=0.7\textwidth]{Figures/plot_acc_time_svm_descriptions.png}
+% % \caption{Evaluation of Number of features, transformations and Algorithms to classify Partners' Descriptions}
+% \end{center}
+% \end{frame}
 
 \subsection{Authorship Attribution}
 \begin{frame}\frametitle{Authorship Attribution}
@@ -363,11 +353,6 @@ Only a subset of the data (N = 2696) is used. Different restrictions were impose
 \end{figure}
 \end{frame}
 
-% \begin{frame}\frametitle{Exploratory Factor Analysis}
-% \begin{figure}
-% \includegraphics[width=0.7\textwidth]{Figures/C5_Images/FA_loadings.png}%
-% \end{figure}
-% \end{frame}
 
 \subsection{Model Specification}
 \begin{frame}[plain]\frametitle{Model Specification}
@@ -385,11 +370,11 @@ Manual selection of some scores obtained (higher interpretability).
 \end{block}
 
 \begin{block}{Factor\_Scores}
-Individual scores resulting by the Exploratory Factor Analysis. The first three dimensions are included:
+Individual scores resulting by the Exploratory Factor Analysis \textbf{EFA} (See Fig \ref{fig:FA}). The first three dimensions are included:
 \begin{itemize}
-\item \texttt{FA\_1} First Dimension Individual Scores of the \textbf{EDA}
-\item \texttt{FA\_2} Second Dimension Individual Scores of the \textbf{EDA}
-\item \texttt{FA\_3} Third Dimension Individual Scores of the \textbf{EDA}
+\item \texttt{FA\_1} First Dimension Individual Scores of the \textbf{EFA}
+\item \texttt{FA\_2} Second Dimension Individual Scores of the \textbf{EFA}
+\item \texttt{FA\_3} Third Dimension Individual Scores of the \textbf{EFA}
 \end{itemize}
 \end{block}
 }
@@ -472,5 +457,36 @@ In Kiva, an online lending platform:
 % \end{tabular}
 % \end{table}
 % \end{frame}
+\section{Appendix}
+\begin{frame}[plain]
+\frametitle{Correspondence Analysis for Country}
+\begin{figure}
+% \includegraphics[width=0.5\textwidth]{Figures/Contingency/Mosaic_Country.png}%
+% \includegraphics[width=0.5\textwidth]{Figures/Contingency/CA_Country.png}
+% \caption{Mosaic Plot and Correspondence Analysis for Country}
+\includegraphics[width=0.8\textwidth]{Figures/Contingency/CA_Country.png}
+\caption{Correspondence Analysis for Country}
+\label{fig:CA_Country}
+\end{figure}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Dimensionality Reduction}
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{Figures/plot_distances_descriptions.png}
+\caption{First two dimensions of the descriptions using multidimensional scaling}
+\label{fig:DR_distances}
+\end{figure}
+\end{frame}
+
+\begin{frame}[plain]
+\frametitle{Exploratory Factor Analysis}
+\begin{figure}
+\includegraphics[width=0.7\textwidth]{Figures/C5_Images/FA_loadings.png}%
+\caption{First two dimensions of the Exploratory Factor Analysis}
+\label{fig:FA}
+\end{figure}
+\end{frame}
+
 
 \end{document}
