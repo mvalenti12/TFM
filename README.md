@@ -1,3 +1,5 @@
+Note: Clean code available on [mvalenti12/kiva](https://github.com/mvalenti12/kiva).
+
 ![](https://github.com/mvalenti12/TFM/blob/master/preview_logo_1.jpg)
 
 # Kiva.org: Exploring Relationships in Online Crowdfunding
